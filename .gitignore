@@ -1,4 +1,4 @@
-tests/ssh_config
+.tests/ssh_config
 .web-extension-id
 web-ext-artifacts
 NetrwMessage

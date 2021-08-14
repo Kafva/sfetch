@@ -1,0 +1,56 @@
+Host loc40
+	ProxyJump loc31
+
+Host loc31
+	ProxyJump loc20
+
+Host loc30
+	ProxyJump loc20
+
+Host loc20
+	ProxyJump loc10
+
+Host loc10
+
+Host loc21
+	ProxyJump loc10
+
+Host opt_loc
+	ProxyJump opt1,opt2
+
+Host opt1
+	ProxyJump loc10
+
+Host opt2
+
+Host opt_loc_2
+	ProxyJump opt2
+
+# If we have a list of proxies the host will
+# appear as a child of the exit node
+
+# Note: a ProxyJump reads the config entries
+# from the original machine and not the current# node but the /etc/hosts on the remote machine# matters
+
+# opt2 will end up with more than one entry in the output since it has opt1 as an implicit proxy for opt_loc
+# but don't have opt1 as a proxy for opt_loc_2
+
+#   loc10
+#   |
+#   --- loc20
+#   |	|
+#   |	--- loc30
+#   |	--- loc31
+#   |		|
+#   |		--- loc40
+#   --- loc21
+#   |
+#   --- opt1
+#   |	|
+#   |	--- opt2
+#   |		|
+#   |		--- opt_loc
+#   |
+#   opt2
+#   |
+#   --- opt_loc_2
