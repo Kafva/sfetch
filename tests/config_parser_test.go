@@ -1,13 +1,14 @@
-package config_parser
+package tests
 
 import (
+	"github.com/Kafva/sfetch/lib"
 	"fmt"
 	"testing"
 	"github.com/stretchr/testify/assert"
 )
 
-func Test_ParseSshConfig(t *testing.T){
-	hosts := ParseSshConfig("../.tests/ssh_config")
+func Test_GetHostMapping(t *testing.T){
+	hosts := lib.GetHostMapping(".mocks/ssh_config")
 
 	assert.Contains(t,  hosts["loc10"], "loc20", "loc21", "opt1")
 	assert.Contains(t,  hosts["loc20"], "loc30", "loc31")

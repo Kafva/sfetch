@@ -1,18 +1,17 @@
-package config_parser
+package lib
 
 import (
 	"bufio"
 	"os"
 	"regexp"
 	"strings"
-	"github.com/Kafva/sfetch/util"
 )
 
 /// Returns a mapping on the form `host -> []jumpHosts` for each host
 /// in the provided ssh_config
 /// NOTE: we assume that each specified proxy has a corresponding 'Host' entry and
 /// dont look at 'Hostname'
-func ParseSshConfig(filepath string) (host_map map[string][]string) {
+func GetHostMapping(filepath string) (host_map map[string][]string) {
 	// ssh_config format has:
 	// 	Host dst
 	//			ProxyJump proxy[,proxy2...]
@@ -22,7 +21,7 @@ func ParseSshConfig(filepath string) (host_map map[string][]string) {
 
 	f, err := os.Open(filepath) 
 	if err != nil { 
-		util.Die(err.Error()) 
+		Die(err.Error()) 
 	}
 	defer f.Close()
 
