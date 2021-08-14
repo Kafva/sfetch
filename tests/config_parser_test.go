@@ -7,7 +7,15 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func Test_GetHostMapping(t *testing.T){
+
+func Test_GetIgnoreHosts(t *testing.T) {
+	ignore_hosts := lib.GetIgnoreHosts(".mocks/sfetchignore")
+	assert.Contains(t, ignore_hosts, "github.com")
+	assert.NotContains(t, ignore_hosts, "#vel")
+	assert.NotContains(t, ignore_hosts, "vel")
+}
+
+func Test_GetHostMapping(t *testing.T) {
 	hosts := lib.GetHostMapping(".mocks/ssh_config")
 
 	assert.Contains(t,  hosts["loc10"], "loc20", "loc21", "opt1")

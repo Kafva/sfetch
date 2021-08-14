@@ -34,7 +34,8 @@ Host end
 # appear as a child of the exit node
 
 # Note: a ProxyJump reads the config entries
-# from the original machine and not the current# node but the /etc/hosts on the remote machine# matters
+# from the original machine and not the current
+# node but the /etc/hosts on the remote machine# matters
 
 # opt2 will end up with more than one entry in the output since it has opt1 as an implicit proxy for opt_loc
 # but don't have opt1 as a proxy for opt_loc_2

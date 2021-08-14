@@ -7,11 +7,37 @@ import (
 	"strings"
 )
 
+/// Returns a map with keys for all hosts to allow for an
+/// easy way to determine if a host should be ignored
+///		if _, ok := ignore_hosts["name"]; ok 
+/// The values in the map are 'nil' since we only care about the keys
+func GetIgnoreHosts(config_file string) map[string]struct{} {
+	f, err := os.Open(config_file) 
+	if err != nil { 
+		Die(err.Error()) 
+	}
+	defer f.Close()
+
+	scanner 	 := bufio.NewScanner(f)
+	host_regex 	 := regexp.MustCompile(`^[^#]`)
+	ignore_hosts := make(map[string]struct{})
+
+	for scanner.Scan() {
+		line := scanner.Text()
+		if host_regex.Match( []byte(line) ) {
+
+			ignore_hosts[strings.TrimSpace(line)] = struct{}{}
+		}
+	}
+
+	return ignore_hosts
+}
+
 /// Returns a mapping on the form `host -> []jumpHosts` for each host
 /// in the provided ssh_config
 /// NOTE: we assume that each specified proxy has a corresponding 'Host' entry and
 /// dont look at 'Hostname'
-func GetHostMapping(filepath string) (host_map map[string][]string) {
+func GetHostMapping(config_file string) (host_map map[string][]string) {
 	// ssh_config format has:
 	// 	Host dst
 	//			ProxyJump proxy[,proxy2...]
@@ -19,7 +45,7 @@ func GetHostMapping(filepath string) (host_map map[string][]string) {
 	// 	(Proxy)Host proxy
 	//			Hosts [dst]
 
-	f, err := os.Open(filepath) 
+	f, err := os.Open(config_file) 
 	if err != nil { 
 		Die(err.Error()) 
 	}
