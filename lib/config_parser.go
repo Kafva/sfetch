@@ -11,22 +11,25 @@ import (
 /// easy way to determine if a host should be ignored
 ///		if _, ok := ignore_hosts["name"]; ok 
 /// The values in the map are 'nil' since we only care about the keys
-func GetIgnoreHosts(config_file string) map[string]struct{} {
-	f, err := os.Open(config_file) 
-	if err != nil { 
-		Die(err.Error()) 
-	}
-	defer f.Close()
-
-	scanner 	 := bufio.NewScanner(f)
-	host_regex 	 := regexp.MustCompile(`^[^#]`)
+func GetIgnoreHosts(ignore_file string) map[string]struct{} {
 	ignore_hosts := make(map[string]struct{})
+	
+	if ignore_file != "" {
+		f, err := os.Open(ignore_file) 
+		if err != nil { 
+			Die(err.Error()) 
+		}
+		defer f.Close()
 
-	for scanner.Scan() {
-		line := scanner.Text()
-		if host_regex.Match( []byte(line) ) {
+		scanner 	 := bufio.NewScanner(f)
+		host_regex 	 := regexp.MustCompile(`^[^#]`)
 
-			ignore_hosts[strings.TrimSpace(line)] = struct{}{}
+		for scanner.Scan() {
+			line := scanner.Text()
+			if host_regex.Match( []byte(line) ) {
+
+				ignore_hosts[strings.TrimSpace(line)] = struct{}{}
+			}
 		}
 	}
 
@@ -34,10 +37,10 @@ func GetIgnoreHosts(config_file string) map[string]struct{} {
 }
 
 /// Returns a mapping on the form `host -> []jumpHosts` for each host
-/// in the provided ssh_config
+/// in the provided ssh_config, excluding hosts provided in the `ignore_hosts` map
 /// NOTE: we assume that each specified proxy has a corresponding 'Host' entry and
 /// dont look at 'Hostname'
-func GetHostMapping(config_file string) (host_map map[string][]string) {
+func GetHostMapping(config_file string, ignore_hosts map[string]struct{}) (host_map map[string][]string) {
 	// ssh_config format has:
 	// 	Host dst
 	//			ProxyJump proxy[,proxy2...]
@@ -71,9 +74,12 @@ func GetHostMapping(config_file string) (host_map map[string][]string) {
 		
 		if len(matches) > 0 { 
 			// Add the identified host to the map with an empty array as its value
-			// (unless it is already present) and continue parsing the next line
+			// (unless it is already present or it should be ignored) 
+			// and continue parsing the next line
 			current_host = matches[1]
-			if hosts_map[current_host] == nil {
+			_, found := ignore_hosts[current_host]
+
+			if hosts_map[current_host] == nil && !found {
 				hosts_map[current_host] = make([]string, 0) 
 			}
 			continue
@@ -100,12 +106,18 @@ func GetHostMapping(config_file string) (host_map map[string][]string) {
 			
 			for _, jump_to := range jump_hosts {
 
-				if hosts_map[main_host] == nil {
-					// If the main_host doesn't have a key, initalise its array with the jump_to host
-					hosts_map[main_host] = []string { jump_to } 
-				} else {
-					// Otherwise append the jump_to host
-					hosts_map[main_host] = append(hosts_map[main_host], jump_to) 
+				_ , main_found  := ignore_hosts[main_host]
+				_ , jump_found  := ignore_hosts[jump_to]
+
+				if !main_found && !jump_found {
+					// Only add hosts if neither one should be ignored
+					if hosts_map[main_host] == nil {
+						// If the main_host doesn't have a key, initalise its array with the jump_to host
+						hosts_map[main_host] = []string { jump_to } 
+					} else {
+						// Otherwise append the jump_to host
+						hosts_map[main_host] = append(hosts_map[main_host], jump_to) 
+					}
 				}
 
 				main_host = jump_to

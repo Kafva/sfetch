@@ -4,7 +4,9 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	//"os/exec"
 	"github.com/Kafva/sfetch/lib"
+    //"github.com/disiqueira/gotree"
 )
 
 /// 1. Enumerate all hosts in the SSH config in a map on the form:
@@ -30,8 +32,32 @@ func main() {
 	flag.Usage = lib.DetailUsage
 	flag.Parse()
 	
-	hosts_map := lib.GetHostMapping(*config_file)
+	ignore_hosts 	:= lib.GetIgnoreHosts(*ignore_file)
+	fmt.Println("Ignore:", ignore_hosts)
 
+	hosts_map 		:= lib.GetHostMapping(*config_file, ignore_hosts)
+	fmt.Println("SSH: ", hosts_map)
+
+	//uname_mapping 	:= lib.GetUnameMapping(hosts_map, *config_file)
 	fmt.Println("-------------------------")
-	fmt.Println(hosts_map,"\n",ignore_file)
+
+	//uname_mapping := map[string]string {
+	//	"club": "Linux 5.13.9-arch1-1 x86_64", 
+	//	"devi": "FreeBSD 13.0-RELEASE-p3 amd64", 
+	//	"kafva.one": "Linux 5.11.4-1-ARCH aarch64", 
+	//	"vel": "Linux 5.13.9-arch1-1 x86_64",
+	//}
+	
+	//model_cmd  := lib.GetModelCommand("Darwin")
+	//ssh kafva.one 'bash -c "uname -rms"'
+	//THIS:https://stackoverflow.com/questions/39496572/running-command-with-pipe-in-golang-exec
+	//model, _ := exec.Command( model_cmd.Path, model_cmd.Args... ).Output()
+	
+	//root := gotree.New("localhost")
+	//sub := root.Add(uname_mapping["kafva.one"])
+	//sub.Add(uname_mapping["vel"])
+	//sub.Add(uname_mapping["club"])
+	//fmt.Println(root.Print())
+
+	//fmt.Println(model, model_cmd, uname_mapping)
 }
