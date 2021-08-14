@@ -2,35 +2,28 @@ package config_parser
 
 import (
 	"bufio"
-	"fmt"
 	"os"
 	"regexp"
 	"strings"
-
 	"github.com/Kafva/sfetch/util"
 )
 
 /// Returns a mapping on the form `host -> []jumpHosts` for each host
 /// in the provided ssh_config
-/// NOTE: we assume that each specified proxy has a corresponding 'Host' entry!
+/// NOTE: we assume that each specified proxy has a corresponding 'Host' entry and
+/// dont look at 'Hostname'
 func ParseSshConfig(filepath string) (host_map map[string][]string) {
 	// ssh_config format has:
 	// 	Host dst
 	//			ProxyJump proxy[,proxy2...]
-	// Internally we want the opposite map:
-	// 	ProxyHost proxy
+	// Internally we want the opposite map so that we get a tree structure:
+	// 	(Proxy)Host proxy
 	//			Hosts [dst]
-	// Go through line by line and insert hosts into a map `host -> [jumpHosts]` 
-	// If we were to use an array  we would haft to perform a linear search
-	// each time we find a ProxyJump to save it in the correct position
 
-
-	// The 'defer' keyword will push the given statement onto
-	// a stack which is executed on exit of the current function,
-	// we can thus ensure that the opened file will be closed
-	// regardless of what happens
 	f, err := os.Open(filepath) 
-	if err != nil { util.Die(err.Error()) }
+	if err != nil { 
+		util.Die(err.Error()) 
+	}
 	defer f.Close()
 
 	scanner 	:= bufio.NewScanner(f)
@@ -39,7 +32,7 @@ func ParseSshConfig(filepath string) (host_map map[string][]string) {
 	host_regex 			:= regexp.MustCompile(`(?i)^\s*Host\s+([^\s]*)`)
 	proxyjump_regex 	:= regexp.MustCompile(`(?i)^\s*ProxyJump\s+([^\s]*)`)
 	
-	// Maps hostname -> [jumpHosts]
+	// Maps hostname -> [jump_to_hosts]
 	hosts_map 		 	:= make(map[string][]string)
 	current_host := ""
 	
@@ -66,47 +59,32 @@ func ParseSshConfig(filepath string) (host_map map[string][]string) {
 
 		if len(matches) > 0 { 
 			jump_hosts 	  :=  strings.Split(matches[1], ",")
+			
+			// Set the inital jump location as the 'main' host
+			main_host := jump_hosts[0]
+			
+			// The `current_host` will be set to the most recently read `Host` line
+			// and should be set as the exit node when more than one proxy exists
+			//  main_host				=  jump_to_1
+			//	hosts_map[main_host]	+= jump_to_2
+			//	hosts_map[jump_to_2]	+= jump_to_3
+			//	...
+			//	hosts_map[jump_to_n]	+= current_host
 
-			if len(jump_hosts) == 1 {
+			jump_hosts = append(jump_hosts[1:], current_host)
+			
+			for _, jump_to := range jump_hosts {
 
-				fmt.Println(current_host,jump_hosts)
-
-				jump_host := jump_hosts[0]
-
-				if hosts_map[jump_host] == nil {
-					// If the jump host doesn't have a key, initalise the array
-					hosts_map[jump_host] = []string { current_host } 
+				if hosts_map[main_host] == nil {
+					// If the main_host doesn't have a key, initalise its array with the jump_to host
+					hosts_map[main_host] = []string { jump_to } 
 				} else {
-					// Otherwise append the current_host
-					hosts_map[jump_host] = append(hosts_map[jump_host], current_host) 
-				}
-			} else {
-				// The `current_host` will be set to the most recently read `Host` line
-				// and will be added to the exit node when more than one proxy exists
-				//	hosts_map[jump_host_1]	+= jump_host_2
-				//	hosts_map[jump_host_2]	+= jump_host_3
-				//	hosts_map[jump_host_3]	+= end_host
-				//	...
-				main_host := jump_hosts[0]
-				jump_hosts = append(jump_hosts[1:], current_host)
-				
-				fmt.Println(main_host, jump_hosts)
-
-				for _, jump_host := range jump_hosts {
-
-					if hosts_map[main_host] == nil {
-						// If the jump host doesn't have a key, initalise the array
-						hosts_map[main_host] = []string { jump_host } 
-					} else {
-						// Otherwise append the next_host
-						hosts_map[main_host] = append(hosts_map[main_host], jump_host) 
-					}
-
-					main_host = jump_host
+					// Otherwise append the jump_to host
+					hosts_map[main_host] = append(hosts_map[main_host], jump_to) 
 				}
 
+				main_host = jump_to
 			}
-
 		}
 	} 
 

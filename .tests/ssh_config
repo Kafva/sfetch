@@ -26,6 +26,10 @@ Host opt2
 Host opt_loc_2
 	ProxyJump opt2
 
+#----------------------------#
+Host end
+	ProxyJump streak1,streak2,streak3,streak4
+
 # If we have a list of proxies the host will
 # appear as a child of the exit node
 
