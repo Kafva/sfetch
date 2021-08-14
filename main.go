@@ -16,7 +16,7 @@ import (
 func main() {
 	home, _ := os.UserHomeDir()
 
-	cfg := flag.String(
+	config_file := flag.String(
 		"ssh_config",
 		fmt.Sprintf("%s/.ssh/config", home), 
 		"Path to ssh config",
@@ -25,7 +25,8 @@ func main() {
 	flag.Usage = lib.DetailUsage
 	flag.Parse()
 	
-	hosts_map := lib.GetHostMapping(*cfg)
+	hosts_map := lib.GetHostMapping(*config_file)
 
+	fmt.Println("-------------------------")
 	fmt.Println(hosts_map)
 }
