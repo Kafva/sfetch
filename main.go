@@ -66,14 +66,13 @@ func main() {
 	Debug("hosts_map:", hosts_map)
 	Debug("has_jump:", has_jump)
 
-	//tree_map, _ 		:= GetHostMapping(*config_file, ignore_hosts, true)
-	//Debug("tree_map:", tree_map)
-
+	info := make(chan string)
 	var uname_mapping map[string]string
 	var root_name string
 
 	if !*basic {
-		root_name 		= GetHostInfo("localhost", *config_file, *verbosity) 
+		go GetHostInfo("localhost", *config_file, *verbosity, info) 
+		root_name 		= <- info 
 		uname_mapping 	= GetUnameMapping(hosts_map, *config_file, *verbosity)
 	} else {
 		root_name,_ 	= os.Hostname()

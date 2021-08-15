@@ -1,4 +1,4 @@
-#!/bin/sh 
+#!/bin/sh
 # Invoke:
 # 	ssh $host < host_info.sh 2> /dev/null
 # View colors with:
@@ -9,8 +9,8 @@ case $u in
 		model="\033[97m \033[0m$(system_profiler SPHardwareDataType | sed -nE 's/.*Model Identifier: (.*)/\1/p')"
 	;;
 	Linux)
-		model=$(cat /sys/devices/virtual/dmi/id/board_{name,version} 2> /dev/null | tr '\n' ' ' 2> /dev/null)
-		[ -z "$model" ] && model=$(cat /sys/firmware/devicetree/base/model)
+		model=$(cat /sys/devices/virtual/dmi/id/board_{name,version} 2> /dev/null | tr '\n' ' ' | sed 's/None//g')
+		[ -z "$model" ] && model=$(cat /sys/firmware/devicetree/base/model 2>/dev/null)
 
 		case "$(sed -nE 's/^ID=(.*)/\1/p' /etc/os-release)" in
 			arch|archarm)     model="\033[94m \033[0m$model" ;;
@@ -28,7 +28,7 @@ case $u in
 	;;
 	*BSD)
 		which doas &> /dev/null && elevate=doas || elevate=sudo
-		model="$($elevate dmidecode --type system 2> /dev/null | sed -nE 's/.*Product Name: (.*)/\1/p')"
+		model="$($elevate dmidecode --type baseboard 2> /dev/null | sed -nE 's/.*Product Name: (.*)/\1/p')"
 
 		case $u in
 			FreeBSD) model="\033[91m \033[0m $model" ;;
@@ -37,4 +37,7 @@ case $u in
 		esac
 	;;
 esac
-printf "$model $(uname -rms)"
+
+[ -z "$model" ] && 
+	uname -rms ||
+	printf "$model $(uname -rms)"

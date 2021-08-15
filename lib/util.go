@@ -28,9 +28,9 @@ func DetailUsage(){
 
 func addToTree(uname_mapping map[string]string, tree_map map[string][]string, root tree.Tree, hostname string) {
 	
-	uname 	   	 := uname_mapping[hostname]
-	if uname != "" {
-		// If an error occured for a host its uname will be empty
+	uname := uname_mapping[hostname]
+	if uname != "" && uname != FAILED {
+		// If an error occured for a host its uname will be empty or "FAIL"
 		current_node := root.Add(uname)
 
 		for _,host := range tree_map[hostname] {
@@ -49,6 +49,7 @@ func MakeTree(root_name string, uname_mapping map[string]string, tree_map map[st
 		if _,found := has_jump[hostname]; found { 
 			// Since the tree_map is flat we need to ensure that we only iterate over the hosts
 			// that are on the top level, i.e. those that do NOT have any proxies
+			// Other hosts will appear implictly during the recursive calls
 			continue
 		}
 		
