@@ -3,7 +3,7 @@ package lib
 import (
 	"os"
 	"fmt"
-	"github.com/disiqueira/gotree"
+	tree "github.com/disiqueira/gotree"
 	flag "github.com/spf13/pflag"
 )
 
@@ -15,7 +15,7 @@ func Die(strs ... interface{}){
 }
 
 func Debug(strs ... interface{}){
-	if DEBUG {
+	if *DEBUG {
 		fmt.Println(strs ...)
 	}
 }
@@ -26,13 +26,34 @@ func DetailUsage(){
 	fmt.Println("More info...")
 }
 
-func MakeTree(uname_mapping map[string]string, hosts_map map[string][]string, config_file string, verbosity int) {
-	localhost := GetHostInfo("localhost", config_file, verbosity) 
+func addToTree(uname_mapping map[string]string, tree_map map[string][]string, root tree.Tree, hostname string) {
+	
+	uname 	   	 := uname_mapping[hostname]
+	if uname != "" {
+		// If an error occured for a host its uname will be empty
+		current_node := root.Add(uname)
 
-	root := gotree.New(localhost)
-	//sub := root.Add(uname_mapping["kafva.one"])
-	//sub.Add(uname_mapping["vel"])
-	//sub.Add(uname_mapping["club"])
+		for _,host := range tree_map[hostname] {
+			// Traverse down all jumphosts
+			addToTree(uname_mapping, tree_map, current_node, host)	
+		}
+	}
+}
+
+func MakeTree(root_name string, uname_mapping map[string]string, tree_map map[string][]string, has_jump map[string]struct{}) {
+	
+	root := tree.New(root_name)
+	
+	for hostname := range tree_map {
+
+		if _,found := has_jump[hostname]; found { 
+			// Since the tree_map is flat we need to ensure that we only iterate over the hosts
+			// that are on the top level, i.e. those that do NOT have any proxies
+			continue
+		}
+		
+		addToTree(uname_mapping, tree_map, root, hostname)
+	}
+
 	fmt.Println(root.Print())
-
 }

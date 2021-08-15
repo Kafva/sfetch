@@ -11,7 +11,7 @@ import (
 /// 1. Enumerate all hosts in the SSH config in a map on the form:
 ///		host -> [jump_to_hosts]
 /// 2. SSH into each one in parallell and construct another map
-///		host -> [uname] 
+///		host -> uname 
 /// 3. Use the two mappings to create a tree-form display
 func main() {
 	home, _ := os.UserHomeDir()
@@ -19,6 +19,15 @@ func main() {
 	help := flag.BoolP("help", "h", false, "Show this help message and exit")
 
 	verbosity := flag.CountP("verbose", "v", "Increase verbosity")
+	
+	DEBUG = flag.BoolP("debug", "d", false, "Print debug information")
+	
+	basic := flag.BoolP(
+		"basic",
+		"b",
+		false,
+		"Print tree structure without connecting to any hosts for OS information",
+	)
 	
 	config_file := flag.StringP(
 		"ssh_config",
@@ -47,39 +56,33 @@ func main() {
 		Die("No ssh executable found"); 
 	}
 	
-	//cmd := exec.Command("ssh", "kafva.one")
-	//script_path := "./scripts/info.sh"
-	//f, err := os.Open(script_path)
-	//if err != nil { 
-	//	Die("Missing: ", script_path) 
-	//}
-	//defer f.Close()
-	//cmd.Stdin = f 
-	////cmd.Stdout = os.Stdout
-	////cmd.Stderr = os.Stderr
-	//res, _ := cmd.Output()
-	//Debug(string(res))
-	//os.Exit(1)
-
-
 	Debug("verbosity:", *verbosity)
+	Debug("basic:", *basic)
 	
 	ignore_hosts 	:= GetIgnoreHosts(*ignore_file)
 	Debug("ignore_hosts:", ignore_hosts)
-
-	hosts_map 		:= GetHostMapping(*config_file, ignore_hosts)
+	
+	hosts_map, has_jump 	:= GetHostMapping(*config_file, ignore_hosts, false)
 	Debug("hosts_map:", hosts_map)
+	Debug("has_jump:", has_jump)
 
-	uname_mapping 	:= GetUnameMapping(hosts_map, *config_file, *verbosity)
-	//uname_mapping := map[string]string {
-	//	"club": "Linux 5.13.9-arch1-1 x86_64", 
-	//	"devi": "FreeBSD 13.0-RELEASE-p3 amd64", 
-	//	"kafva.one": "Linux 5.11.4-1-ARCH aarch64", 
-	//	"vel": "Linux 5.13.9-arch1-1 x86_64",
-	//}
+	//tree_map, _ 		:= GetHostMapping(*config_file, ignore_hosts, true)
+	//Debug("tree_map:", tree_map)
+
+	var uname_mapping map[string]string
+	var root_name string
+
+	if !*basic {
+		root_name 		= GetHostInfo("localhost", *config_file, *verbosity) 
+		uname_mapping 	= GetUnameMapping(hosts_map, *config_file, *verbosity)
+	} else {
+		root_name,_ 	= os.Hostname()
+		uname_mapping	= GetHostnameMapping(hosts_map)
+	}
 	
-	Debug("-------------------------")
 	Debug(uname_mapping)
+	Debug("-------------------------")
 	
-	MakeTree(uname_mapping, hosts_map, *config_file, *verbosity)
+	
+	MakeTree(root_name, uname_mapping, hosts_map, has_jump)
 }

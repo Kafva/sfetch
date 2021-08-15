@@ -7,11 +7,11 @@ import (
 	"strings"
 )
 
-func GetUnameMapping(hosts_map map[string][]string, config_file string, verbosity int) (uname_mapping map[string]string) {
+func GetUnameMapping(tree_map map[string][]string, config_file string, verbosity int) (uname_mapping map[string]string) {
 
-	uname_mapping = make(map[string]string, len(hosts_map))
+	uname_mapping = make(map[string]string, len(tree_map))
 
-	for host, jump_hosts := range hosts_map {
+	for host, jump_hosts := range tree_map {
 
 		if uname_mapping[host] == "" {
 			// If their uname_mapping is empty, fetch the `uname` output
@@ -29,6 +29,25 @@ func GetUnameMapping(hosts_map map[string][]string, config_file string, verbosit
 	return uname_mapping
 }
 
+/// Creates a mapping where key == value, enables tree printing without any network connectivity
+func GetHostnameMapping(tree_map map[string][]string) (uname_mapping map[string]string) {
+	uname_mapping = make(map[string]string, len(tree_map))
+
+	for host, jump_hosts := range tree_map {
+
+		if uname_mapping[host] == "" {
+			uname_mapping[host] = host
+		}
+
+		for _, jump_to := range jump_hosts {
+			if uname_mapping[jump_to] == "" {
+				uname_mapping[jump_to] = jump_to 
+			}
+		}
+	}
+
+	return uname_mapping
+}
 
 /// Returns information regarding the provided host using `ssh` (if not "localhost") and `uname`
 /// if a verbosity level >0 is provided a custom script is passed as stdin to the process
