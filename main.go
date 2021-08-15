@@ -1,12 +1,11 @@
 package main
 
 import (
-	"flag"
+	flag "github.com/spf13/pflag"
 	"fmt"
 	"os"
-	//"os/exec"
-	"github.com/Kafva/sfetch/lib"
-    //"github.com/disiqueira/gotree"
+	"os/exec"
+	. "github.com/Kafva/sfetch/lib"
 )
 
 /// 1. Enumerate all hosts in the SSH config in a map on the form:
@@ -17,30 +16,46 @@ import (
 func main() {
 	home, _ := os.UserHomeDir()
 
-	config_file := flag.String(
+	help := flag.BoolP("help", "h", false, "Show this help message and exit")
+
+	verbosity := flag.CountP("verbose", "v", "Increase verbosity")
+	
+	config_file := flag.StringP(
 		"ssh_config",
+		"c",
 		fmt.Sprintf("%s/.ssh/config", home), 
 		"Path to ssh config",
 	)
 	
-	ignore_file := flag.String(
+	ignore_file := flag.StringP(
 		"ignore",
+		"i",
 		"",
 		"Path to a file with hosts to ignore",
 	)
 	
-	flag.Usage = lib.DetailUsage
+	flag.Usage = DetailUsage
 	flag.Parse()
 	
-	ignore_hosts 	:= lib.GetIgnoreHosts(*ignore_file)
-	fmt.Println("Ignore:", ignore_hosts)
+	if *help {
+		DetailUsage()
+		os.Exit(1)
+	} 
+	
+	SSH_PATH, _ = exec.LookPath("ssh")
+	if SSH_PATH == "" { 
+		Die("No ssh executable found"); 
+	}
+	
+	Debug("verbosity:", *verbosity)
+	
+	ignore_hosts 	:= GetIgnoreHosts(*ignore_file)
+	Debug("ignore_hosts:", ignore_hosts)
 
-	hosts_map 		:= lib.GetHostMapping(*config_file, ignore_hosts)
-	fmt.Println("SSH: ", hosts_map)
+	hosts_map 		:= GetHostMapping(*config_file, ignore_hosts)
+	Debug("hosts_map:", hosts_map)
 
-	//uname_mapping 	:= lib.GetUnameMapping(hosts_map, *config_file)
-	fmt.Println("-------------------------")
-
+	uname_mapping 	:= GetUnameMapping(hosts_map, *config_file, *verbosity)
 	//uname_mapping := map[string]string {
 	//	"club": "Linux 5.13.9-arch1-1 x86_64", 
 	//	"devi": "FreeBSD 13.0-RELEASE-p3 amd64", 
@@ -48,16 +63,8 @@ func main() {
 	//	"vel": "Linux 5.13.9-arch1-1 x86_64",
 	//}
 	
-	//model_cmd  := lib.GetModelCommand("Darwin")
-	//ssh kafva.one 'bash -c "uname -rms"'
-	//THIS:https://stackoverflow.com/questions/39496572/running-command-with-pipe-in-golang-exec
-	//model, _ := exec.Command( model_cmd.Path, model_cmd.Args... ).Output()
+	Debug("-------------------------")
+	Debug(uname_mapping)
 	
-	//root := gotree.New("localhost")
-	//sub := root.Add(uname_mapping["kafva.one"])
-	//sub.Add(uname_mapping["vel"])
-	//sub.Add(uname_mapping["club"])
-	//fmt.Println(root.Print())
-
-	//fmt.Println(model, model_cmd, uname_mapping)
+	MakeTree(uname_mapping, hosts_map, *config_file, *verbosity)
 }

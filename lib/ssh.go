@@ -2,16 +2,12 @@ package lib
 
 import (
 	"fmt"
+	"os"
 	"os/exec"
 	"strings"
 )
 
-func GetUnameMapping(hosts_map map[string][]string, config_file string) (uname_mapping map[string]string) {
-
-	ssh_path, err := exec.LookPath("ssh")
-	if err != nil { 
-		Die("No ssh executable found"); 
-	}
+func GetUnameMapping(hosts_map map[string][]string, config_file string, verbosity int) (uname_mapping map[string]string) {
 
 	uname_mapping = make(map[string]string, len(hosts_map))
 
@@ -19,13 +15,13 @@ func GetUnameMapping(hosts_map map[string][]string, config_file string) (uname_m
 
 		if uname_mapping[host] == "" {
 			// If their uname_mapping is empty, fetch the `uname` output
-			uname_mapping[host] = GetUname(host, config_file, ssh_path)
+			uname_mapping[host] = GetHostInfo(host, config_file, verbosity)
 		}
 
 		for _, jump_to := range jump_hosts {
 			// We need to go through each jump host in case they don't have their own entry
 			if uname_mapping[jump_to] == "" {
-				uname_mapping[jump_to] = GetUname(jump_to, config_file, ssh_path)
+				uname_mapping[jump_to] = GetHostInfo(jump_to, config_file, verbosity)
 			}
 		}
 	}
@@ -33,49 +29,67 @@ func GetUnameMapping(hosts_map map[string][]string, config_file string) (uname_m
 	return uname_mapping
 }
 
-
-func GetModelCommand(os_type string) string {
-	cmd := ""
-
-	switch os_type {
-	case "Darwin":
-		cmd = "system_profiler SPHardwareDataType | sed -nE 's/.*Model Identifier: (.*)/\\1/p'"
-	case "Linux":
-		cmd = "cat /sys/devices/virtual/dmi/id/board_{name,version} | tr '\n' ' '"
-	case "FreeBSD":
-		cmd = "doas dmidecode --type system | sed -nE 's/.*Product Name: (.*)/\\1/p'"
-	default:
-		Die(fmt.Sprintf("Unknown OS: %s", os_type))
+func GetHostInfo(host, config_file string, verbosity int) string {
+	
+	Debug("=>", host)
+	
+	cmd := exec.Cmd{}
+	
+	if host == "localhost" {
+		cmd = exec.Cmd {
+			Path: "/bin/sh",
+			Args: []string {},
+		}
+	} else {
+		cmd = exec.Cmd {
+			Path: SSH_PATH,
+			Args: []string {
+				"-F",
+				config_file,
+				"-o",
+				fmt.Sprintf("ConnectTimeout=%d", CONNECTION_TIMEOUT),
+				host,
+			},
+		}
 	}
 	
-	return cmd
-}
+	script_path := ""
 
-/// TODO error handling
-func GetUname(host, config_file, ssh_path string) string {
-	// Linux 5.11.4-1-ARCH aarch64
-	// Linux 5.13.9-arch1-1 x86_64
-	// Darwin 20.5.0 x86_64
-	
-
-	//fmt.Printf("=> %s\n", host)
-	//return host
-
-	uname_cmd := exec.Cmd {
-		Path: ssh_path,
-		Args: []string {
-			"-F",
-			config_file,
-			host,
-			"uname",
-			"-rms",
-		},
+	switch {
+		case verbosity == 1:
+			script_path = INFO_SCRIPT
+		case verbosity >= 2:
+			script_path = FULL_INFO_SCRIPT
+		default:
+			if host == "localhost" {
+				cmd.Path = "uname"
+				cmd.Args = append(cmd.Args, "-rms") 	
+			} else {
+				cmd.Args = append(cmd.Args, "uname", "-rms") 
+			}
 	}
 
-	uname, err := exec.Command(uname_cmd.Path, uname_cmd.Args ...).Output()
+	if script_path != "" {
+		if host == "localhost" {
+			cmd.Path = script_path 
+		} else {
+			f, err := os.Open(script_path)
+			if err != nil { 
+				Die("Missing: ", script_path) 
+			}
+			defer f.Close()
+			cmd.Stdin = f 
+			cmd.Args = append(cmd.Args, "--")
+		}
+	}
+
+	Debug(cmd)
+	result, err := cmd.CombinedOutput()
+	
 	if err != nil {
-		Die(err.Error())
+		fmt.Fprintf(os.Stderr, "[%s] Command failed: %s\n", host, err.Error())
+		return ""
 	}
 
-	return  strings.TrimSuffix(string(uname), "\n") 
+	return strings.TrimSuffix(string(result), "\n") 
 }
