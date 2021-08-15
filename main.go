@@ -47,6 +47,21 @@ func main() {
 		Die("No ssh executable found"); 
 	}
 	
+	//cmd := exec.Command("ssh", "kafva.one")
+	//script_path := "./scripts/info.sh"
+	//f, err := os.Open(script_path)
+	//if err != nil { 
+	//	Die("Missing: ", script_path) 
+	//}
+	//defer f.Close()
+	//cmd.Stdin = f 
+	////cmd.Stdout = os.Stdout
+	////cmd.Stderr = os.Stderr
+	//res, _ := cmd.Output()
+	//Debug(string(res))
+	//os.Exit(1)
+
+
 	Debug("verbosity:", *verbosity)
 	
 	ignore_hosts 	:= GetIgnoreHosts(*ignore_file)

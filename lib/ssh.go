@@ -29,28 +29,25 @@ func GetUnameMapping(hosts_map map[string][]string, config_file string, verbosit
 	return uname_mapping
 }
 
+
+/// Returns information regarding the provided host using `ssh` (if not "localhost") and `uname`
+/// if a verbosity level >0 is provided a custom script is passed as stdin to the process
+/// instead of running uname 
 func GetHostInfo(host, config_file string, verbosity int) string {
 	
 	Debug("=>", host)
 	
 	cmd := exec.Cmd{}
 	
-	if host == "localhost" {
-		cmd = exec.Cmd {
-			Path: "/bin/sh",
-			Args: []string {},
-		}
-	} else {
-		cmd = exec.Cmd {
-			Path: SSH_PATH,
-			Args: []string {
-				"-F",
-				config_file,
-				"-o",
-				fmt.Sprintf("ConnectTimeout=%d", CONNECTION_TIMEOUT),
-				host,
-			},
-		}
+	if host != "localhost" {
+		cmd = *exec.Command(
+			SSH_PATH,
+			"-F",
+			config_file,
+			"-o",
+			fmt.Sprintf("ConnectTimeout=%d", CONNECTION_TIMEOUT),
+			host,
+		)
 	}
 	
 	script_path := ""
@@ -62,8 +59,7 @@ func GetHostInfo(host, config_file string, verbosity int) string {
 			script_path = FULL_INFO_SCRIPT
 		default:
 			if host == "localhost" {
-				cmd.Path = "uname"
-				cmd.Args = append(cmd.Args, "-rms") 	
+				cmd = *exec.Command("uname", "-rms")
 			} else {
 				cmd.Args = append(cmd.Args, "uname", "-rms") 
 			}
@@ -71,7 +67,7 @@ func GetHostInfo(host, config_file string, verbosity int) string {
 
 	if script_path != "" {
 		if host == "localhost" {
-			cmd.Path = script_path 
+			cmd = *exec.Command(script_path) 
 		} else {
 			f, err := os.Open(script_path)
 			if err != nil { 
@@ -79,12 +75,10 @@ func GetHostInfo(host, config_file string, verbosity int) string {
 			}
 			defer f.Close()
 			cmd.Stdin = f 
-			cmd.Args = append(cmd.Args, "--")
 		}
 	}
 
-	Debug(cmd)
-	result, err := cmd.CombinedOutput()
+	result, err := cmd.Output()
 	
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "[%s] Command failed: %s\n", host, err.Error())
