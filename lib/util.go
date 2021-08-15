@@ -23,7 +23,7 @@ func Debug(strs ... interface{}){
 func DetailUsage(){
 	fmt.Printf("Usage of %s:\n", os.Args[0])
 	flag.PrintDefaults()
-	fmt.Println("More info...")
+	fmt.Println(HELP_STR)
 }
 
 func addToTree(uname_mapping map[string]string, tree_map map[string][]string, root tree.Tree, hostname string) {

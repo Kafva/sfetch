@@ -16,13 +16,12 @@ import (
 func main() {
 	home, _ := os.UserHomeDir()
 
-	help := flag.BoolP("help", "h", false, "Show this help message and exit")
-
-	verbosity := flag.CountP("verbose", "v", "Increase verbosity")
+	HELP 				:= flag.BoolP("help", "h", false, "Show this help message and exit")
+	VERBOSE 			:= flag.CountP("verbose", "v", "Increase verbosity")
+	DEBUG 				=  flag.BoolP("debug", "d", false, "Print debug information")
+	CONNECTION_TIMEOUT 	=  flag.IntP("timeout", "t", 2, "Connection timeout for ssh sessions")
 	
-	DEBUG = flag.BoolP("debug", "d", false, "Print debug information")
-	
-	basic := flag.BoolP(
+	BASIC := flag.BoolP(
 		"basic",
 		"b",
 		false,
@@ -46,7 +45,7 @@ func main() {
 	flag.Usage = DetailUsage
 	flag.Parse()
 	
-	if *help {
+	if *HELP {
 		DetailUsage()
 		os.Exit(1)
 	} 
@@ -56,8 +55,8 @@ func main() {
 		Die("No ssh executable found"); 
 	}
 	
-	Debug("verbosity:", *verbosity)
-	Debug("basic:", *basic)
+	Debug("VERBOSE:", *VERBOSE)
+	Debug("BASIC:", *BASIC)
 	
 	ignore_hosts 	:= GetIgnoreHosts(*ignore_file)
 	Debug("ignore_hosts:", ignore_hosts)
@@ -66,14 +65,12 @@ func main() {
 	Debug("hosts_map:", hosts_map)
 	Debug("has_jump:", has_jump)
 
-	info := make(chan string)
 	var uname_mapping map[string]string
 	var root_name string
 
-	if !*basic {
-		go GetHostInfo("localhost", *config_file, *verbosity, info) 
-		root_name 		= <- info 
-		uname_mapping 	= GetUnameMapping(hosts_map, *config_file, *verbosity)
+	if !*BASIC {
+		root_name 		= GetHostInfoSerial("localhost", *config_file, *VERBOSE)
+		uname_mapping 	= GetUnameMapping(hosts_map, *config_file, *VERBOSE)
 	} else {
 		root_name,_ 	= os.Hostname()
 		uname_mapping	= GetHostnameMapping(hosts_map)
