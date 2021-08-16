@@ -1,7 +1,12 @@
 package lib
 
+const RELEASE = false
+// In the release build the _SCRIPT values will
+// contain the actual code to be ran and in dev mode
+// it will be the path to the script 
 const INFO_SCRIPT 	   = "./scripts/info.sh"
 const FULL_INFO_SCRIPT = "./scripts/full_info.sh"
+
 const FAILED = "FAILED"
 const HELP_STR = "-----------\nPrint a tree of hosts accessible via ssh"
 const HOSTNAME_ANSI_COLOR = "\033[97m"

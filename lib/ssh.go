@@ -96,13 +96,13 @@ func GetHostInfo(host string) string {
 		)
 	}
 	
-	script_path := ""
+	script := ""
 
 	switch {
 		case *VERBOSE == 1:
-			script_path = INFO_SCRIPT
+			script = INFO_SCRIPT
 		case *VERBOSE >= 2:
-			script_path = FULL_INFO_SCRIPT
+			script = FULL_INFO_SCRIPT
 		default:
 			if host == "localhost" {
 				cmd = *exec.Command("uname", "-rms")
@@ -111,16 +111,25 @@ func GetHostInfo(host string) string {
 			}
 	}
 
-	if script_path != "" {
+	if script != "" {
 		if host == "localhost" {
-			cmd = *exec.Command(script_path) 
-		} else {
-			f, err := os.Open(script_path)
-			if err != nil { 
-				Die("Missing: ", script_path) 
+			if RELEASE {
+				cmd = *exec.Command("/bin/sh", "-c", script)
+			} else {
+				cmd = *exec.Command(script) 
 			}
-			defer f.Close()
-			cmd.Stdin = f 
+		} else {
+			if RELEASE {
+				f := strings.NewReader(script)
+				cmd.Stdin = f 
+			} else {
+				f, err := os.Open(script)
+				if err != nil { 
+					Die("Missing: ", script) 
+				}
+				defer f.Close()
+				cmd.Stdin = f 
+			}
 		}
 	}
 
