@@ -2,6 +2,8 @@ package lib
 
 import (
 	"fmt"
+	"context"
+	"time"
 	"os"
 	"os/exec"
 	"strings"
@@ -83,6 +85,12 @@ func GetHostInfoChannel(host string, info chan string) {
 /// instead of running uname 
 func GetHostInfo(host string) string {
 	
+	// If the host requires more than one proxy jump and can't be reached the process will hang
+	// we therefore need a maximum execution time after which a connection is considered failed
+	// Using `-o ConnectTimeout` was insufficient
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(*CONNECTION_TIMEOUT) )
+	defer cancel()
+
 	cmd := exec.Cmd{}
 	
 	if host != LOCALHOST {
@@ -90,8 +98,6 @@ func GetHostInfo(host string) string {
 			SSH_PATH,
 			"-F",
 			*CONFIG_FILE,
-			"-o",
-			fmt.Sprintf("ConnectTimeout=%d", *CONNECTION_TIMEOUT),
 			host,
 		)
 	}
@@ -136,7 +142,11 @@ func GetHostInfo(host string) string {
 	result, err := cmd.Output()
 	
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "[%s] Command failed: %s\n", host, err.Error())
+		if ctx.Err() == context.DeadlineExceeded {
+			fmt.Fprintf(os.Stderr, "[%s] Connection timeout: %s\n", host, err.Error())
+		} else {
+			fmt.Fprintf(os.Stderr, "[%s] Command failed: %s\n", host, err.Error())
+		}
 		return FAILED
 	}
 

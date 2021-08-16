@@ -69,6 +69,5 @@ func main() {
 	Debug(uname_mapping)
 	Debug("-------------------------")
 	
-	
 	MakeTree(root_name, uname_mapping, hosts_map, has_jump)
 }
