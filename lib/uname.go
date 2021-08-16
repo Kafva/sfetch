@@ -94,12 +94,7 @@ func GetHostInfo(host string) string {
 	cmd := exec.Cmd{}
 	
 	if host != LOCALHOST {
-		cmd = *exec.Command(
-			SSH_PATH,
-			"-F",
-			*CONFIG_FILE,
-			host,
-		)
+		cmd = *exec.Command(SSH_PATH, "-F", *CONFIG_FILE, host)
 	}
 	
 	script := ""
