@@ -1,5 +1,5 @@
 # sfetch
-CLI application to display system information for all hosts accessible over ssh.
+CLI application to display system information for all hosts accessible over ssh. To display icons in the output requires a terminal with support for [nerdfonts](https://www.nerdfonts.com/font-downloads).
 
 ## Installation
 Fetch the package to your `$GOPATH`
