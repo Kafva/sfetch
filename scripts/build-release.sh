@@ -1,11 +1,12 @@
 #!/bin/sh 
 die(){ echo -e "$1" >&2 ; exit 1; }
 minifyBash(){
-	# Escapes `"` and `\` in a such a way that we can store the strin in a go variable
-	# Also escapes `&` to avoid issues in the `sed -i` statement
-	sed -E '/^#/d; s/\[ /; \[ /g' $1 | tr '\n' ' ' | sed 's/\s+/ /g;' | sed -E 's@\\@\\\\@g;' |
-		sed 's/\&/\\\&/g' |
-		sed 's/case/;case/g' |
+	# Also 
+	sed -E '/^#/d; s/\[ /; \[ /g' $1 | tr '\n' ' ' | 
+		sed 's/\s+/ /g;' 	| # Remove unnecessary whitespace
+		sed -E 's@\\@\\\\@g;' 	| # Escape backslashes
+		sed 's/\&/\\\&/g' 	| # `&` needs to be escaped to avoid issues in the `sed -i` statement
+		sed 's/case/;case/g'	| # Hack for case...esac
 		sed 's/^;case/case/'
 
 }
@@ -24,8 +25,6 @@ config="$project_dir/lib/config.go"
 cp $config /tmp/config.go
 
 $sedExec -i "s/RELEASE = false/RELEASE = true/; s@./scripts/info.sh@${info_script}@; s@./scripts/full_info.sh@${full_info_script}@" $config
-
-#cat $config
 
 go build && go install
 cp /tmp/config.go $config
