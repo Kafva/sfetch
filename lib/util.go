@@ -30,8 +30,14 @@ func addToTree(uname_mapping map[string]string, tree_map map[string][]string, ro
 	
 	uname := uname_mapping[hostname]
 	if uname != "" && uname != FAILED {
+		var current_node tree.Tree
+		
 		// If an error occured for a host its uname will be empty or "FAIL"
-		current_node := root.Add(uname)
+		if *INCLUDE_HOSTNAME {
+			current_node = root.Add(uname + " " + HOSTNAME_ANSI_COLOR + hostname + "\033[0m")
+		} else {
+			current_node = root.Add(uname)
+		}
 
 		for _,host := range tree_map[hostname] {
 			// Traverse down all jumphosts

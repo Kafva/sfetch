@@ -11,36 +11,21 @@ import (
 /// 1. Enumerate all hosts in the SSH config in a map on the form:
 ///		host -> [jump_to_hosts]
 /// 2. SSH into each one in parallell and construct another map
-///		host -> uname 
+///		host -> `uname` 
 /// 3. Use the two mappings to create a tree-form display
 func main() {
 	home, _ := os.UserHomeDir()
 
 	HELP 				:= flag.BoolP("help", "h", false, "Show this help message and exit")
-	VERBOSE 			:= flag.CountP("verbose", "v", "Increase verbosity")
+	BASIC 				:= flag.BoolP("basic", "b", false, "Print tree structure without connecting to any hosts for OS information")
+	VERBOSE 			= flag.CountP("verbose", "v", "Increase verbosity")
 	DEBUG 				=  flag.BoolP("debug", "d", false, "Print debug information")
 	CONNECTION_TIMEOUT 	=  flag.IntP("timeout", "t", 2, "Connection timeout for ssh sessions")
+	SLOW 				=  flag.BoolP("slow", "s", false, "Run each SSH process sequentially (default is to use a goroutine for each)")
+	INCLUDE_HOSTNAME	= flag.BoolP("include_hostname", "H", false, "Include hostname in output")
 	
-	BASIC := flag.BoolP(
-		"basic",
-		"b",
-		false,
-		"Print tree structure without connecting to any hosts for OS information",
-	)
-	
-	config_file := flag.StringP(
-		"ssh_config",
-		"c",
-		fmt.Sprintf("%s/.ssh/config", home), 
-		"Path to ssh config",
-	)
-	
-	ignore_file := flag.StringP(
-		"ignore",
-		"i",
-		"",
-		"Path to a file with hosts to ignore",
-	)
+	CONFIG_FILE = flag.StringP("ssh_config", "c", fmt.Sprintf("%s/.ssh/config", home), "Path to ssh config")
+	IGNORE_FILE = flag.StringP("ignore", "i", "", "Path to a file with hosts to ignore",)
 	
 	flag.Usage = DetailUsage
 	flag.Parse()
@@ -58,10 +43,10 @@ func main() {
 	Debug("VERBOSE:", *VERBOSE)
 	Debug("BASIC:", *BASIC)
 	
-	ignore_hosts 	:= GetIgnoreHosts(*ignore_file)
+	ignore_hosts 	:= GetIgnoreHosts(*IGNORE_FILE)
 	Debug("ignore_hosts:", ignore_hosts)
 	
-	hosts_map, has_jump 	:= GetHostMapping(*config_file, ignore_hosts, false)
+	hosts_map, has_jump 	:= GetHostMapping(*CONFIG_FILE, ignore_hosts, false)
 	Debug("hosts_map:", hosts_map)
 	Debug("has_jump:", has_jump)
 
@@ -69,8 +54,13 @@ func main() {
 	var root_name string
 
 	if !*BASIC {
-		root_name 		= GetHostInfoSerial("localhost", *config_file, *VERBOSE)
-		uname_mapping 	= GetUnameMapping(hosts_map, *config_file, *VERBOSE)
+		root_name 		= GetHostInfo("localhost")
+		if *INCLUDE_HOSTNAME {
+			hostname, _ := os.Hostname()
+			root_name = root_name + " " + HOSTNAME_ANSI_COLOR + hostname + "\033[0m" 
+		}
+
+		uname_mapping 	= GetUnameMapping(hosts_map)
 	} else {
 		root_name,_ 	= os.Hostname()
 		uname_mapping	= GetHostnameMapping(hosts_map)
