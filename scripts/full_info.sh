@@ -23,12 +23,9 @@ case $u in
 			raspbian) 	  model="\033[91m \033[0m$model" ;;
 			*)	  	  model="\033[97m \033[0m$model" ;;
 		esac
-
-		uname -a | grep -iq microsoft && model="\033[96m \033[0m$model"
 	;;
 	*BSD)
-		which doas &> /dev/null && elevate=doas || elevate=sudo
-		model="$($elevate dmidecode --type baseboard 2> /dev/null | sed -nE 's/.*Product Name: (.*)/\1/p')"
+		model="$(doas dmidecode --type baseboard 2> /dev/null | sed -nE 's/.*Product Name: (.*)/\1/p')"
 
 		case $u in
 			FreeBSD) model="\033[91m \033[0m $model" ;;

@@ -8,8 +8,7 @@ case "$(uname)" in
 		[ -z "$model" ] && model=$(cat /sys/firmware/devicetree/base/model 2> /dev/null)
 	;;
 	FreeBSD)
-		which doas &> /dev/null && elevate=doas || elevate=sudo
-		model=$($elevate dmidecode --type baseboard 2> /dev/null | sed -nE 's/.*Product Name: (.*)/\1/p')
+		model=$(doas dmidecode --type baseboard 2> /dev/null | sed -nE 's/.*Product Name: (.*)/\1/p')
 	;;
 esac
 
