@@ -11,7 +11,7 @@ func Die(strs ... interface{}){
 	// Go does not support optional parameters (code=1)
 	strs = append(strs, "\n")
 	fmt.Fprint(os.Stderr, strs ...)
-	os.Exit(1)
+	os.Exit(EXIT_ERROR)
 }
 
 func Debug(strs ... interface{}){

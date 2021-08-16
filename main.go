@@ -54,7 +54,7 @@ func main() {
 	var root_name string
 
 	if !*BASIC {
-		root_name 		= GetHostInfo("localhost")
+		root_name 		= GetHostInfo(LOCALHOST)
 		if *INCLUDE_HOSTNAME {
 			hostname, _ := os.Hostname()
 			root_name = root_name + " " + HOSTNAME_ANSI_COLOR + hostname + "\033[0m" 

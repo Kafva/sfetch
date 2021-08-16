@@ -10,6 +10,8 @@ const FULL_INFO_SCRIPT = `./scripts/full_info.sh`
 const FAILED = "FAILED"
 var HELP_STR = "-----------\nPrint a tree of hosts accessible via ssh"
 const HOSTNAME_ANSI_COLOR = "\033[97m"
+const LOCALHOST = "localhost"
+const EXIT_ERROR = 1
 
 // Command line options
 var SLOW *bool 

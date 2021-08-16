@@ -85,7 +85,7 @@ func GetHostInfo(host string) string {
 	
 	cmd := exec.Cmd{}
 	
-	if host != "localhost" {
+	if host != LOCALHOST {
 		cmd = *exec.Command(
 			SSH_PATH,
 			"-F",
@@ -104,7 +104,7 @@ func GetHostInfo(host string) string {
 		case *VERBOSE >= 2:
 			script = FULL_INFO_SCRIPT
 		default:
-			if host == "localhost" {
+			if host == LOCALHOST {
 				cmd = *exec.Command("uname", "-rms")
 			} else {
 				cmd.Args = append(cmd.Args, "uname", "-rms") 
@@ -112,7 +112,7 @@ func GetHostInfo(host string) string {
 	}
 
 	if script != "" {
-		if host == "localhost" {
+		if host == LOCALHOST {
 			if RELEASE {
 				cmd = *exec.Command("/bin/sh", "-c", script)
 			} else {
