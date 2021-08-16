@@ -23,7 +23,11 @@ func Debug(strs ... interface{}){
 func DetailUsage(){
 	fmt.Printf("Usage of %s:\n", os.Args[0])
 	flag.PrintDefaults()
-	fmt.Println(HELP_STR)
+	if RELEASE {
+		fmt.Println(HELP_STR + "\n(Release version)")
+	} else {
+		fmt.Println(HELP_STR + "\n(Development version)")
+	}
 }
 
 func addToTree(uname_mapping map[string]string, tree_map map[string][]string, root tree.Tree, hostname string) {

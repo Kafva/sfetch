@@ -18,7 +18,7 @@ func main() {
 
 	HELP 				:= flag.BoolP("help", "h", false, "Show this help message and exit")
 	BASIC 				:= flag.BoolP("basic", "b", false, "Print tree structure without connecting to any hosts for OS information")
-	VERBOSE 			= flag.CountP("verbose", "v", "Increase verbosity")
+	VERBOSE 			= flag.CountP("verbose", "v", "Increase verbosity (level 2 requires nerdfonts support)")
 	DEBUG 				=  flag.BoolP("debug", "d", false, "Print debug information")
 	CONNECTION_TIMEOUT 	=  flag.IntP("timeout", "t", 2, "Connection timeout for ssh sessions")
 	SLOW 				=  flag.BoolP("slow", "s", false, "Run each SSH process sequentially (default is to use a goroutine for each)")

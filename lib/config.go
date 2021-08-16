@@ -8,7 +8,7 @@ const INFO_SCRIPT 	   = "./scripts/info.sh"
 const FULL_INFO_SCRIPT = "./scripts/full_info.sh"
 
 const FAILED = "FAILED"
-const HELP_STR = "-----------\nPrint a tree of hosts accessible via ssh"
+var HELP_STR = "-----------\nPrint a tree of hosts accessible via ssh"
 const HOSTNAME_ANSI_COLOR = "\033[97m"
 
 // Command line options
