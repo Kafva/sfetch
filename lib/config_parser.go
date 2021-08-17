@@ -2,10 +2,45 @@ package lib
 
 import (
 	"bufio"
+	"fmt"
 	"os"
 	"regexp"
 	"strings"
 )
+
+/// If the host requires more than one proxy jump and can't be reached the process will hang
+/// we therefore need a maximum execution time after which a connection is considered failed
+/// Using `-o ConnectTimeout` was seemingly insufficient, we need to specify the option inside the config
+/// and therefore always add this option if it doesn't already exist
+func PatchConfig(config_file string){
+
+	f, err := os.OpenFile(config_file, os.O_APPEND|os.O_RDWR|os.O_CREATE, 0600) 
+	if err != nil { 
+		Die(err.Error()) 
+	}
+	defer f.Close()
+
+	scanner 		:= bufio.NewScanner(f)
+	timeout_regex 	:= regexp.MustCompile(`(?i)^\s*ConnectTimeout\s+[0-9]+`)
+	need_to_patch	:= true
+
+	for scanner.Scan() {
+		line := scanner.Text()
+
+		if timeout_regex.Match([]byte(line)) {
+			need_to_patch = false
+			break
+		}
+	} 
+	
+	if need_to_patch {
+		Debug("=> Patching", config_file)
+		_, err = f.WriteString( fmt.Sprintf("\nConnectTimeout %d\n", *CONNECTION_TIMEOUT) )	
+		if err != nil {
+			ErrMsg("Failed to patch %s: %s\n", config_file, err.Error())
+		}
+	}
+}
 
 /// Returns a map with keys for all hosts to allow for an
 /// easy way to determine if a host should be ignored
@@ -139,7 +174,7 @@ func GetHostMapping(config_file string, ignore_hosts map[string]struct{}, tree b
 	if tree {
 		for host := range has_jump {
 			// Remove all top-level hosts that have a jump_to entry
-			Debug("deleting", host)
+			Debug("Deleting", host)
 			delete(hosts_map, host)
 		}
 	}

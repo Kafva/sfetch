@@ -1,22 +1,28 @@
 package lib
 
 import (
-	"os"
 	"fmt"
+	"os"
 	tree "github.com/disiqueira/gotree"
 	flag "github.com/spf13/pflag"
 )
 
-func Die(strs ... interface{}){
+func Die(strs ... interface{}) {
 	// Go does not support optional parameters (code=1)
 	strs = append(strs, "\n")
 	fmt.Fprint(os.Stderr, strs ...)
 	os.Exit(EXIT_ERROR)
 }
 
-func Debug(strs ... interface{}){
+func Debug(strs ... interface{}) {
 	if *DEBUG {
 		fmt.Println(strs ...)
+	}
+}
+
+func ErrMsg(format string, args ... interface{}) {
+	if !*QUIET {
+		fmt.Fprintf(os.Stderr, format, args ...)
 	}
 }
 
@@ -33,7 +39,7 @@ func DetailUsage(){
 func addToTree(uname_mapping map[string]string, tree_map map[string][]string, root tree.Tree, hostname string) {
 	
 	uname := uname_mapping[hostname]
-	if uname != "" && uname != FAILED {
+	if uname != "" && uname != COMMAND_FAILED && uname != COMMAND_TIMEOUT {
 		var current_node tree.Tree
 		
 		// If an error occured for a host its uname will be empty or "FAIL"

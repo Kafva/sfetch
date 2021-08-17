@@ -20,9 +20,10 @@ func main() {
 	BASIC 				:= flag.BoolP("basic", "b", false, "Print tree structure without connecting to any hosts for OS information")
 	VERBOSE 			= flag.CountP("verbose", "v", "Increase verbosity (level 2 requires nerdfonts support)")
 	DEBUG 				=  flag.BoolP("debug", "d", false, "Print debug information")
-	CONNECTION_TIMEOUT 	=  flag.IntP("timeout", "t", 2, "Connection timeout for ssh sessions")
+	CONNECTION_TIMEOUT 	=  flag.IntP("timeout", "t", 4, "Does not override existing `ConnectTimeout` settings in ssh_config")
 	SLOW 				=  flag.BoolP("slow", "s", false, "Run each SSH process sequentially (default is to use a goroutine for each)")
 	INCLUDE_HOSTNAME	= flag.BoolP("include_hostname", "H", false, "Include hostname in output")
+	QUIET				= flag.BoolP("quiet", "q", false, "Suppress errors")
 	
 	CONFIG_FILE = flag.StringP("ssh_config", "c", fmt.Sprintf("%s/.ssh/config", home), "Path to ssh config")
 	IGNORE_FILE = flag.StringP("ignore", "i", "", "Path to a file with hosts to ignore",)
@@ -42,6 +43,8 @@ func main() {
 	
 	Debug("VERBOSE:", *VERBOSE)
 	Debug("BASIC:", *BASIC)
+	
+	//PatchConfig(*CONFIG_FILE)
 	
 	ignore_hosts 	:= GetIgnoreHosts(*IGNORE_FILE)
 	Debug("ignore_hosts:", ignore_hosts)

@@ -1,9 +1,9 @@
 package lib
 
 import (
+	"bytes"
 	"fmt"
-	"context"
-	"time"
+	"io"
 	"os"
 	"os/exec"
 	"strings"
@@ -84,17 +84,24 @@ func GetHostInfoChannel(host string, info chan string) {
 /// if a VERBOSE level >0 is provided a custom script is passed as stdin to the process
 /// instead of running uname 
 func GetHostInfo(host string) string {
-	
-	// If the host requires more than one proxy jump and can't be reached the process will hang
-	// we therefore need a maximum execution time after which a connection is considered failed
-	// Using `-o ConnectTimeout` was insufficient
-	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(*CONNECTION_TIMEOUT) )
-	defer cancel()
+	// To differentiate a failed command from a failed connection every connection is killed
+	// after a preset timeout after which no retries are made. If the command itself fails
+	// we may want to retry with a Windows compatible command
+	//ctx, cancel := context.WithTimeout(context.Background(), time.Duration(*CONNECTION_TIMEOUT) * time.Second )
+	//defer cancel()
 
 	cmd := exec.Cmd{}
 	
 	if host != LOCALHOST {
-		cmd = *exec.Command(SSH_PATH, "-F", *CONFIG_FILE, host)
+		//cmd = *exec.CommandContext(ctx, 
+		//	SSH_PATH, "-F", *CONFIG_FILE, 
+		//	"-o", fmt.Sprintf("ConnectTimeout=%d", *CONNECTION_TIMEOUT), 
+		//	host,
+		//)
+		cmd = *exec.Command(SSH_PATH, "-F", *CONFIG_FILE, 
+			"-o", fmt.Sprintf("ConnectTimeout=%d", *CONNECTION_TIMEOUT), 
+			host,
+		)
 	}
 	
 	script := ""
@@ -133,16 +140,27 @@ func GetHostInfo(host string) string {
 			}
 		}
 	}
+	
+	var out bytes.Buffer
 
-	result, err := cmd.Output()
+	// Using the .Output() functions hangs on hosts were the jump hosts is accessible
+	// but the target is unavailable 
+	cmd.Stdout = &out
+	err := cmd.Run()
 	
 	if err != nil {
-		if ctx.Err() == context.DeadlineExceeded {
-			fmt.Fprintf(os.Stderr, "[%s] Connection timeout: %s\n", host, err.Error())
-		} else {
-			fmt.Fprintf(os.Stderr, "[%s] Command failed: %s\n", host, err.Error())
-		}
-		return FAILED
+		//if ctx.Err() == context.DeadlineExceeded {
+		//	ErrMsg("[%s] Connection timeout: %s\n", host, err.Error())
+		//	return COMMAND_TIMEOUT
+		//} else {
+			ErrMsg("[%s] Command failed: %s\n", host, err.Error())
+			return COMMAND_FAILED
+		//}
+	}
+	
+	result, err := io.ReadAll(&out)
+	if err != nil {
+		ErrMsg("[%s] Read error: %s\n", host, err.Error())
 	}
 
 	return strings.TrimSuffix(string(result), "\n") 

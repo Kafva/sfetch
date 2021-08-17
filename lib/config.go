@@ -7,13 +7,15 @@ const RELEASE = false
 const INFO_SCRIPT 	   = `./scripts/info.sh`
 const FULL_INFO_SCRIPT = `./scripts/full_info.sh`
 
-const FAILED = "FAILED"
+const COMMAND_FAILED = "COMMAND_FAILED"
+const COMMAND_TIMEOUT = "COMMAND_TIMEOUT"
 var HELP_STR = "-----------\nPrint a tree of hosts accessible via ssh"
 const HOSTNAME_ANSI_COLOR = "\033[97m"
 const LOCALHOST = "localhost"
 const EXIT_ERROR = 1
 
 // Command line options
+var QUIET *bool 
 var SLOW *bool 
 var CONNECTION_TIMEOUT *int
 var INCLUDE_HOSTNAME *bool
