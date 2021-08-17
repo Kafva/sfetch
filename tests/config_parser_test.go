@@ -45,7 +45,7 @@ func Test_GetIgnoreHosts(t *testing.T) {
 ///             │           └── end
 ///             └── opt_loc_2
 func Test_GetHostMapping(t *testing.T) {
-	hosts, has_jump := GetHostMapping(".mocks/ssh_config", make(map[string]struct{}), false)
+	hosts, has_jump := GetHostMapping(".mocks/ssh_config", make(map[string]struct{}))
 
 	assert.Contains(t,  hosts["loc10"], "loc20", "loc21", "opt1")
 	assert.Contains(t,  hosts["loc20"], "loc30", "loc31")
