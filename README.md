@@ -4,9 +4,9 @@ CLI application to display system information for all hosts accessible over ssh.
 ![](./.github/screenshot.png)
 
 ## Installation
-Fetch the package to your `$GOPATH`
+Clone the project
 ```bash
-go get github.com/Kafva/sfetch
+git clone git@github.com:Kafva/sfetch.git
 ```
 and run `./scripts/build-release.sh` to install the binary in `$GOPATH/bin`.
 
