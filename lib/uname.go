@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"regexp"
 	"strings"
 )
 
@@ -16,15 +17,20 @@ func GetUnameMapping(hosts_map map[string][]string) (uname_mapping map[string]st
 	// Each SSH session is given its own channel inside a map to enable concurrent execution
 	uname_mapping = make(map[string]string, len(hosts_map))
 	chan_mapping := make(map[string]chan string)
+	
+	// To avoid several go routines from being launched for the same host
+	// we maintain a map of all hosts which have been / are being processed
+	// Each host should only have one `=>` message in debug mode
+	invoked_mapping := make(map[string]struct{}, len(hosts_map))
     
 	for host, jump_hosts := range hosts_map {
-		Debug("=> (Host)", host)
-		addUnameMapping(uname_mapping, chan_mapping, host)
+
+		addUnameMapping(uname_mapping, chan_mapping, invoked_mapping, host)
 
 		for _, jump_to := range jump_hosts {
 			// We need to go through each jump host in case they don't have their own entry
-			Debug("=> (Jump)", jump_to)
-			addUnameMapping(uname_mapping, chan_mapping, jump_to)
+			
+			addUnameMapping(uname_mapping, chan_mapping, invoked_mapping, jump_to)
 		}
 	}
 	
@@ -39,12 +45,13 @@ func GetUnameMapping(hosts_map map[string][]string) (uname_mapping map[string]st
 	return uname_mapping
 }
 
-func addUnameMapping(uname_mapping map[string]string, chan_mapping map[string]chan string, host string) {
+func addUnameMapping(uname_mapping map[string]string, chan_mapping map[string]chan string, invoked_mapping map[string]struct{}, host string) {
+	
+	if _, found := invoked_mapping[host]; !found {
+		// Ensure that another go-routine hasn't been ran / is running for the host
+		Debug("=>", host)
+		invoked_mapping[host] = struct{}{}
 
-	if uname_mapping[host] == "" { 
-		// Only fetch `uname` output if none exists in the map 
-		// if a previous command has been executed and failed the mapping wont be empty
-		
 		if !*SLOW {
 			if chan_mapping[host] == nil { 
 				chan_mapping[host] = make(chan string)
@@ -84,20 +91,10 @@ func GetHostInfoChannel(host string, info chan string) {
 /// if a VERBOSE level >0 is provided a custom script is passed as stdin to the process
 /// instead of running uname 
 func GetHostInfo(host string) string {
-	// To differentiate a failed command from a failed connection every connection is killed
-	// after a preset timeout after which no retries are made. If the command itself fails
-	// we may want to retry with a Windows compatible command
-	//ctx, cancel := context.WithTimeout(context.Background(), time.Duration(*CONNECTION_TIMEOUT) * time.Second )
-	//defer cancel()
 
 	cmd := exec.Cmd{}
 	
 	if host != LOCALHOST {
-		//cmd = *exec.CommandContext(ctx, 
-		//	SSH_PATH, "-F", *CONFIG_FILE, 
-		//	"-o", fmt.Sprintf("ConnectTimeout=%d", *CONNECTION_TIMEOUT), 
-		//	host,
-		//)
 		cmd = *exec.Command(SSH_PATH, "-F", *CONFIG_FILE, 
 			"-o", fmt.Sprintf("ConnectTimeout=%d", *CONNECTION_TIMEOUT), 
 			host,
@@ -142,6 +139,7 @@ func GetHostInfo(host string) string {
 	}
 	
 	var out bytes.Buffer
+	timeout_regex := regexp.MustCompile("exit status 255")
 
 	// Using the .Output() functions hangs on hosts were the jump hosts is accessible
 	// but the target is unavailable 
@@ -149,13 +147,13 @@ func GetHostInfo(host string) string {
 	err := cmd.Run()
 	
 	if err != nil {
-		//if ctx.Err() == context.DeadlineExceeded {
-		//	ErrMsg("[%s] Connection timeout: %s\n", host, err.Error())
-		//	return COMMAND_TIMEOUT
-		//} else {
+		if timeout_regex.Match([]byte(err.Error())) {
+			ErrMsg("[%s] Connection failed: %s\n", host, err.Error())
+			return COMMAND_TIMEOUT
+		} else {
 			ErrMsg("[%s] Command failed: %s\n", host, err.Error())
 			return COMMAND_FAILED
-		//}
+		}
 	}
 	
 	result, err := io.ReadAll(&out)
