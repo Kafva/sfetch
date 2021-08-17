@@ -1,6 +1,7 @@
 #!/bin/sh 
 die(){ echo -e "$1" >&2 ; exit 1; }
 
+sedExec=sed
 if ! $(sed --version 2>&1 | grep -q "GNU sed"); then
 	which gsed &> /dev/null || 
 		die 'Install GNU `sed`' && 
