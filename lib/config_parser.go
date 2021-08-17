@@ -7,10 +7,10 @@ import (
 	"strings"
 )
 
-/// Returns a map with keys for all hosts to allow for an
-/// easy way to determine if a host should be ignored
-///		if _, ok := ignore_hosts["name"]; ok 
-/// The values in the map are 'nil' since we only care about the keys
+// Returns a map with keys for all hosts to allow for an
+// easy way to determine if a host should be ignored
+//		if _, ok := ignore_hosts["name"]; ok 
+// The values in the map are 'nil' since we only care about the keys
 func GetIgnoreHosts(ignore_file string) map[string]struct{} {
 	ignore_hosts := make(map[string]struct{})
 	
@@ -36,16 +36,11 @@ func GetIgnoreHosts(ignore_file string) map[string]struct{} {
 	return ignore_hosts
 }
 
-/// Returns a mapping on the form `host -> []jumpHosts` for each host
-/// in the provided ssh_config, excluding hosts provided in the `ignore_hosts` map
-/// and a map containing all hosts which require a ProxyJump to be reached
-/// If `tree` is set to true dedicated entries for hosts that have a proxy (those in `has_jump`) wont be returned, i.e.
-///		[ loc1:[], loc2:[], loc3:[loc1, loc2], loc4:[] ]
-///	becomes
-///		[ loc3: [loc1, loc2], loc4:[] ] 
-/// NOTE: we assume that each specified proxy has a corresponding 'Host' entry and
-/// dont look at 'Hostname'
-func GetHostMapping(config_file string, ignore_hosts map[string]struct{}, tree bool) (hosts_map map[string][]string, has_jump map[string]struct{}) {
+// Returns a mapping on the form `host -> []jumpHosts` for each host
+// in the provided ssh_config, excluding hosts provided in the `ignore_hosts` map
+// and a map containing all hosts which require a ProxyJump to be reached
+// NOTE: we assume that each specified proxy has a corresponding 'Host' entry and do not look at 'Hostname'
+func GetHostMapping(config_file string, ignore_hosts map[string]struct{}) (hosts_map map[string][]string, has_jump map[string]struct{}) {
 	// ssh_config format has:
 	// 	Host dst
 	//			ProxyJump proxy[,proxy2...]
@@ -136,13 +131,5 @@ func GetHostMapping(config_file string, ignore_hosts map[string]struct{}, tree b
 		}
 	} 
 	
-	if tree {
-		for host := range has_jump {
-			// Remove all top-level hosts that have a jump_to entry
-			Debug("Deleting", host)
-			delete(hosts_map, host)
-		}
-	}
-
 	return hosts_map, has_jump
 }

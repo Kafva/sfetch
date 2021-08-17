@@ -1,18 +1,18 @@
 package main
 
 import (
-	flag "github.com/spf13/pflag"
 	"fmt"
 	"os"
 	"os/exec"
+	flag "github.com/spf13/pflag"
 	. "github.com/Kafva/sfetch/lib"
 )
 
-/// 1. Enumerate all hosts in the SSH config in a map on the form:
-///		host -> [jump_to_hosts]
-/// 2. SSH into each one in parallell and construct another map
-///		host -> `uname` 
-/// 3. Use the two mappings to create a tree-form display
+// 1. Enumerate all hosts in the SSH config in a map on the form:
+//		host -> [jump_to_hosts]
+// 2. SSH into each one in parallell and construct another map
+//		host -> `uname` 
+// 3. Use the two mappings to create a tree-form display
 func main() {
 	home, _ := os.UserHomeDir()
 
@@ -47,7 +47,7 @@ func main() {
 	ignore_hosts 	:= GetIgnoreHosts(*IGNORE_FILE)
 	Debug("ignore_hosts:", ignore_hosts)
 	
-	hosts_map, has_jump 	:= GetHostMapping(*CONFIG_FILE, ignore_hosts, false)
+	hosts_map, has_jump 	:= GetHostMapping(*CONFIG_FILE, ignore_hosts)
 	Debug("hosts_map:", hosts_map)
 	Debug("has_jump:", has_jump)
 
@@ -63,7 +63,7 @@ func main() {
 
 		uname_mapping 	= GetUnameMapping(hosts_map)
 	} else {
-		root_name,_ 	= os.Hostname()
+		root_name, _ 	= os.Hostname()
 		uname_mapping	= GetHostnameMapping(hosts_map)
 	}
 	

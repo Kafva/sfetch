@@ -8,7 +8,6 @@ import (
 )
 
 func Die(strs ... interface{}) {
-	// Go does not support optional parameters (code=1)
 	strs = append(strs, "\n")
 	fmt.Fprint(os.Stderr, strs ...)
 	os.Exit(EXIT_ERROR)
@@ -36,7 +35,7 @@ func DetailUsage(){
 	}
 }
 
-func addToTree(uname_mapping map[string]string, tree_map map[string][]string, root tree.Tree, hostname string) {
+func addToTree(uname_mapping map[string]string, hosts_map map[string][]string, root tree.Tree, hostname string) {
 	
 	uname := uname_mapping[hostname]
 	if uname != "" && uname != COMMAND_FAILED && uname != COMMAND_TIMEOUT {
@@ -49,27 +48,27 @@ func addToTree(uname_mapping map[string]string, tree_map map[string][]string, ro
 			current_node = root.Add(uname)
 		}
 
-		for _,host := range tree_map[hostname] {
+		for _,host := range hosts_map[hostname] {
 			// Traverse down all jumphosts
-			addToTree(uname_mapping, tree_map, current_node, host)	
+			addToTree(uname_mapping, hosts_map, current_node, host)	
 		}
 	}
 }
 
-func MakeTree(root_name string, uname_mapping map[string]string, tree_map map[string][]string, has_jump map[string]struct{}) {
+func MakeTree(root_name string, uname_mapping map[string]string, hosts_map map[string][]string, has_jump map[string]struct{}) {
 	
 	root := tree.New(root_name)
 	
-	for hostname := range tree_map {
+	for hostname := range hosts_map {
 
 		if _,found := has_jump[hostname]; found { 
-			// Since the tree_map is flat we need to ensure that we only iterate over the hosts
+			// Since the hosts_map is flat we need to ensure that we only iterate over the hosts
 			// that are on the top level, i.e. those that do NOT have any proxies
-			// Other hosts will appear implictly during the recursive calls
+			// Hosts with a proxy will appear implictly during the recursive calls
 			continue
 		}
 		
-		addToTree(uname_mapping, tree_map, root, hostname)
+		addToTree(uname_mapping, hosts_map, root, hostname)
 	}
 
 	fmt.Println(root.Print())

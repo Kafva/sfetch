@@ -1,7 +1,7 @@
 package lib
 
 const RELEASE = false
-// In the release build the _SCRIPT values will
+// In the release build the INFO_SCRIPT values will
 // contain the actual code to be ran and in dev mode
 // it will be the path to the script 
 const INFO_SCRIPT 	   = `./scripts/info.sh`

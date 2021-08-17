@@ -10,8 +10,8 @@ import (
 	"strings"
 )
 
-/// If a connection has failed once we don't want to re-run it
-/// Prevent a new go routine from running if one is already waiting on output
+// If a connection has failed once we don't want to re-run it
+// Prevent a new go routine from running if one is already waiting on output
 func GetUnameMapping(hosts_map map[string][]string) (uname_mapping map[string]string) {
 
 	// Each SSH session is given its own channel inside a map to enable concurrent execution
@@ -63,7 +63,7 @@ func addUnameMapping(uname_mapping map[string]string, chan_mapping map[string]ch
 	}
 }
 
-/// Creates a mapping where key == value, enables tree printing without any network connectivity
+// Creates a mapping where key == value, enables tree printing without any network connectivity
 func GetHostnameMapping(hosts_map map[string][]string) (uname_mapping map[string]string) {
 	uname_mapping = make(map[string]string, len(hosts_map))
 
@@ -87,9 +87,9 @@ func GetHostInfoChannel(host string, info chan string) {
 	info <- GetHostInfo(host)	
 }
 
-/// Returns information regarding the provided host using `ssh` (if not "localhost") and `uname`
-/// if a VERBOSE level >0 is provided a custom script is passed as stdin to the process
-/// instead of running uname 
+// Returns information regarding the provided host using `ssh` (if not "localhost") and `uname`
+// if a VERBOSE level >0 is provided a custom script is passed as stdin to the process
+// instead of running uname 
 func GetHostInfo(host string) string {
 
 	cmd := exec.Cmd{}
@@ -116,6 +116,9 @@ func GetHostInfo(host string) string {
 			}
 	}
 
+	// In the release build the INFO_SCRIPT values will
+	// contain the actual code to be ran and in dev mode
+	// it will be the path to the script 
 	if script != "" {
 		if host == LOCALHOST {
 			if RELEASE {
@@ -138,20 +141,21 @@ func GetHostInfo(host string) string {
 		}
 	}
 	
+	// Using the .Output() functions hangs on hosts were the jump host is accessible
+	// but the target is unavailable, .Run() is therefore used instead 
 	var out bytes.Buffer
-	timeout_regex := regexp.MustCompile("exit status 255")
-
-	// Using the .Output() functions hangs on hosts were the jump hosts is accessible
-	// but the target is unavailable 
 	cmd.Stdout = &out
 	err := cmd.Run()
 	
 	if err != nil {
+		timeout_regex := regexp.MustCompile("exit status 255")
+		
 		if timeout_regex.Match([]byte(err.Error())) {
 			ErrMsg("[%s] Connection failed: %s\n", host, err.Error())
 			return COMMAND_TIMEOUT
 		} else {
 			ErrMsg("[%s] Command failed: %s\n", host, err.Error())
+			// TODO retry using a Windows compatible command
 			return COMMAND_FAILED
 		}
 	}
