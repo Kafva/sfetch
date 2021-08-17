@@ -17,20 +17,13 @@ func GetUnameMapping(hosts_map map[string][]string) (uname_mapping map[string]st
 	// Each SSH session is given its own channel inside a map to enable concurrent execution
 	uname_mapping = make(map[string]string, len(hosts_map))
 	chan_mapping := make(map[string]chan string)
-	
-	// To avoid several go routines from being launched for the same host
-	// we maintain a map of all hosts which have been / are being processed
-	// Each host should only have one `=>` message in debug mode
-	invoked_mapping := make(map[string]struct{}, len(hosts_map))
-    
+	 
 	for host, jump_hosts := range hosts_map {
-
-		addUnameMapping(uname_mapping, chan_mapping, invoked_mapping, host)
+		addUnameMapping(uname_mapping, chan_mapping, host)
 
 		for _, jump_to := range jump_hosts {
 			// We need to go through each jump host in case they don't have their own entry
-			
-			addUnameMapping(uname_mapping, chan_mapping, invoked_mapping, jump_to)
+			addUnameMapping(uname_mapping, chan_mapping, jump_to)
 		}
 	}
 	
@@ -45,12 +38,16 @@ func GetUnameMapping(hosts_map map[string][]string) (uname_mapping map[string]st
 	return uname_mapping
 }
 
-func addUnameMapping(uname_mapping map[string]string, chan_mapping map[string]chan string, invoked_mapping map[string]struct{}, host string) {
+func addUnameMapping(uname_mapping map[string]string, chan_mapping map[string]chan string, host string) {
 	
-	if _, found := invoked_mapping[host]; !found {
+	if uname_mapping[host] == "" {
 		// Ensure that another go-routine hasn't been ran / is running for the host
 		Debug("=>", host)
-		invoked_mapping[host] = struct{}{}
+
+		// To avoid several go routines from being launched for the same host
+		// we set each host entry as 'IN_PROGRESS' before launching a go routine 
+		// Each host should only have one `=>` message in debug mode
+		uname_mapping[host] = COMMAND_IN_PROGRESS
 
 		if !*SLOW {
 			if chan_mapping[host] == nil { 
@@ -165,5 +162,9 @@ func GetHostInfo(host string) string {
 		ErrMsg("[%s] Read error: %s\n", host, err.Error())
 	}
 
-	return strings.TrimSuffix(string(result), "\n") 
+	ret := strings.TrimSuffix(string(result), "\n")
+	if ret == "" {
+		ret = COMMAND_FAILED
+	}
+	return ret  
 }

@@ -9,6 +9,7 @@ const FULL_INFO_SCRIPT = `./scripts/full_info.sh`
 
 const COMMAND_FAILED = "COMMAND_FAILED"
 const COMMAND_TIMEOUT = "COMMAND_TIMEOUT"
+const COMMAND_IN_PROGRESS = "COMMAND_IN_PROGRESS"
 var HELP_STR = "-----------\nPrint a tree of hosts accessible via ssh"
 const HOSTNAME_ANSI_COLOR = "\033[97m"
 const LOCALHOST = "localhost"

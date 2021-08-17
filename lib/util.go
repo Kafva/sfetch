@@ -38,7 +38,7 @@ func DetailUsage(){
 func addToTree(uname_mapping map[string]string, hosts_map map[string][]string, root tree.Tree, hostname string) {
 	
 	uname := uname_mapping[hostname]
-	if uname != "" && uname != COMMAND_FAILED && uname != COMMAND_TIMEOUT {
+	if uname != "" && uname != COMMAND_FAILED && uname != COMMAND_TIMEOUT && uname != COMMAND_IN_PROGRESS {
 		var current_node tree.Tree
 		
 		// If an error occured for a host its uname will be empty or "FAIL"
