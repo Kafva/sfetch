@@ -10,6 +10,7 @@ case $u in
 	;;
 	Linux)
 		model=$(cat /sys/devices/virtual/dmi/id/board_{name,version} 2> /dev/null | tr '\n' ' ' | sed 's/None//g')
+		[ -z "$model" ] && model=$(cat /sys/devices/virtual/dmi/id/product_{name,version} 2> /dev/null | tr '\n' ' ' | sed 's/None//g')
 		[ -z "$model" ] && model=$(cat /sys/firmware/devicetree/base/model 2>/dev/null)
 
 		case "$(sed -nE 's/^ID=(.*)/\1/p' /etc/os-release)" in
