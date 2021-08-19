@@ -161,6 +161,12 @@ func GetHostInfo(host string) string {
 	if err != nil {
 		ErrMsg("[%s] Read error: %s\n", host, err.Error())
 	}
+	
+	if len(result) > 200 {
+		// In Release mode on Windows the captured output becomes the entire
+		// script (i.e. over 200 chars)
+		return GetWindowsHostInfo(host)
+	}
 
 	ret := strings.TrimSuffix(string(result), "\n")
 	if ret == "" {
