@@ -3,6 +3,7 @@ package lib
 import (
 	"bytes"
 	"fmt"
+	"bufio"
 	"io"
 	"os"
 	"os/exec"
@@ -151,9 +152,8 @@ func GetHostInfo(host string) string {
 			ErrMsg("[%s] Connection failed: %s\n", host, err.Error())
 			return COMMAND_TIMEOUT
 		} else {
-			ErrMsg("[%s] Command failed: %s\n", host, err.Error())
-			// TODO retry using a Windows compatible command
-			return COMMAND_FAILED
+			// Retry using a Windows compatible command
+			return GetWindowsHostInfo(host)
 		}
 	}
 	
@@ -167,4 +167,74 @@ func GetHostInfo(host string) string {
 		ret = COMMAND_FAILED
 	}
 	return ret  
+}
+
+
+func GetWindowsHostInfo(host string) string {
+	cmd := *exec.Command(SSH_PATH, "-F", *CONFIG_FILE, 
+		"-o", fmt.Sprintf("ConnectTimeout=%d", *CONNECTION_TIMEOUT), 
+		host,// "systeminfo.exe", "/fo", "list",
+	)
+
+	switch  {
+		case *VERBOSE == 1:
+			cmd.Stdin = strings.NewReader("systeminfo.exe /fo list ; wmic baseboard get product") 
+		case *VERBOSE >= 2:
+			cmd.Stdin = strings.NewReader("systeminfo.exe /fo list ; wmic baseboard get product") 
+		default:
+			cmd.Stdin = strings.NewReader("systeminfo.exe /fo list") 
+	}
+
+	var out bytes.Buffer
+	cmd.Stdout = &out
+	err := cmd.Run()
+	
+	if err != nil {
+		ErrMsg("[%s] Command failed: %s\n", host, err.Error())
+		return COMMAND_FAILED
+	}
+	
+	result, err := io.ReadAll(&out)
+	if err != nil {
+		ErrMsg("[%s] Read error: %s\n", host, err.Error())
+	}
+
+	return ParseSystemInfo(string(result))
+}
+
+/// Return a string comprised of "OS name - OS Version - Arch" given output
+/// from systeminfo.exe
+func ParseSystemInfo(systemInfo string) string {
+	scanner := bufio.NewScanner( strings.NewReader(systemInfo) )
+	
+	regexes := []*regexp.Regexp {
+		regexp.MustCompile(`(?i)^\s*OS Name:\s+(.*)`),
+		regexp.MustCompile(`(?i)^\s*OS Version:\s+([.0-9]*)`),
+		regexp.MustCompile(`(?i)^\s*System Type:\s+(.*)`),
+	}
+	
+	found := []bool{ false, false, false }
+
+	uname := ""
+
+	for scanner.Scan() {
+		line := scanner.Text()
+		
+		for i, re := range regexes {
+			if found[i] { continue }
+			
+			matches := re.FindStringSubmatch(line)
+
+			if len(matches) > 1 { 
+				found[i] = true
+				uname = uname + " " + matches[1]
+			}
+		}	
+	}
+	
+	if uname == "" {
+		return COMMAND_FAILED
+	} else {
+		return strings.TrimSpace(strings.ReplaceAll(uname, "N/A ", ""))
+	}
 }
