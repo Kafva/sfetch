@@ -169,20 +169,22 @@ func GetHostInfo(host string) string {
 	return ret  
 }
 
-
 func GetWindowsHostInfo(host string) string {
 	cmd := *exec.Command(SSH_PATH, "-F", *CONFIG_FILE, 
 		"-o", fmt.Sprintf("ConnectTimeout=%d", *CONNECTION_TIMEOUT), 
-		host,// "systeminfo.exe", "/fo", "list",
+		host,
 	)
 
+	prefix := ""
+
 	switch  {
-		case *VERBOSE == 1:
-			cmd.Stdin = strings.NewReader("systeminfo.exe /fo list ; wmic baseboard get product") 
-		case *VERBOSE >= 2:
-			cmd.Stdin = strings.NewReader("systeminfo.exe /fo list ; wmic baseboard get product") 
-		default:
-			cmd.Stdin = strings.NewReader("systeminfo.exe /fo list") 
+	case *VERBOSE >= 2:
+		prefix = "\033[96m \033[0m "
+		cmd.Stdin = strings.NewReader("wmic baseboard get product ; wmic os get name ; wmic os get version")
+	case *VERBOSE >= 1:
+		cmd.Stdin = strings.NewReader("wmic baseboard get product ; wmic os get name ; wmic os get version")
+	default:
+		cmd.Stdin = strings.NewReader("wmic os get name ; wmic os get version") 
 	}
 
 	var out bytes.Buffer
@@ -199,42 +201,39 @@ func GetWindowsHostInfo(host string) string {
 		ErrMsg("[%s] Read error: %s\n", host, err.Error())
 	}
 
-	return ParseSystemInfo(string(result))
+	return prefix + ParseSystemInfo(string(result))
 }
 
-/// Return a string comprised of "OS name - OS Version - Arch" given output
-/// from systeminfo.exe
+/// Return a string comprised of `(Motherboard) - OS name - OS Version` given output from wmic commands
 func ParseSystemInfo(systemInfo string) string {
 	scanner := bufio.NewScanner( strings.NewReader(systemInfo) )
 	
-	regexes := []*regexp.Regexp {
-		regexp.MustCompile(`(?i)^\s*OS Name:\s+(.*)`),
-		regexp.MustCompile(`(?i)^\s*OS Version:\s+([.0-9]*)`),
-		regexp.MustCompile(`(?i)^\s*System Type:\s+(.*)`),
-	}
+	header_regex := regexp.MustCompile(`(?i)^\s*Name|Version|Product\s*`)
+	output_regex := regexp.MustCompile(`(?i)[-_a-zA-Z0-9.() ]+`)
+	spaces_regex := regexp.MustCompile(`\s+`)
 	
-	found := []bool{ false, false, false }
-
+	output_line := false
 	uname := ""
 
 	for scanner.Scan() {
 		line := scanner.Text()
 		
-		for i, re := range regexes {
-			if found[i] { continue }
-			
-			matches := re.FindStringSubmatch(line)
-
-			if len(matches) > 1 { 
-				found[i] = true
-				uname = uname + " " + matches[1]
+		if output_line {
+			uname = uname + " " + output_regex.FindString(line)	
+			output_line = false
+		} else {
+			if header_regex.Match([]byte(line)) { 
+				// The next line will hold a value we want to save
+				output_line = true
 			}
-		}	
+		}
 	}
 	
 	if uname == "" {
 		return COMMAND_FAILED
 	} else {
-		return strings.TrimSpace(strings.ReplaceAll(uname, "N/A ", ""))
+		// Remove all trailing whitespaces and replace sequences of more than one
+		// space with a single space
+		return strings.TrimSpace( spaces_regex.ReplaceAllString(uname, " "))
 	}
 }

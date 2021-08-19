@@ -8,7 +8,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-
 func Test_ParseSystemInfo(t *testing.T) {
 
 	f, err := os.Open(".mocks/systeminfo") 
@@ -24,5 +23,5 @@ func Test_ParseSystemInfo(t *testing.T) {
 
 	uname := ParseSystemInfo(string(systemInfo))
 	
-	assert.Equal(t, "Microsoft Windows 10 Education 10.0.19041 x64-based PC", uname)
+	assert.Equal(t, "Microsoft Windows 10 Education 10.0.19041 XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX", uname)
 }
