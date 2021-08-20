@@ -90,6 +90,10 @@ func GetHostInfoChannel(host string, info chan string) {
 // if a VERBOSE level >0 is provided a custom script is passed as stdin to the process
 // instead of running uname 
 func GetHostInfo(host string) string {
+	
+	if runtime.GOOS == "windows" && host == LOCALHOST {
+		return GetWindowsHostInfo(host)	
+	}
 
 	cmd := exec.Cmd{}
 	
@@ -101,10 +105,6 @@ func GetHostInfo(host string) string {
 	}
 	
 	script := ""
-	if runtime.GOOS == "windows" {
-
-	} else {
-	}
 
 	switch {
 	case *VERBOSE == 1:
