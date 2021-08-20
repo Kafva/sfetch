@@ -29,5 +29,8 @@ cp $config /tmp/config.go
 
 $sedExec -i "s/RELEASE = false/RELEASE = true/; s@./scripts/info.sh@${info_script}@; s@./scripts/full_info.sh@${full_info_script}@" $config
 
-go build && go install
+goExec=go
+uname -a | grep -q microsoft && goExec=/mnt/c/Users/$USER/scoop/shims/go.exe
+
+$goExec build && $goExec install
 cp /tmp/config.go $config
