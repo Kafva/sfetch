@@ -7,6 +7,10 @@ const RELEASE = false
 const INFO_SCRIPT 	   = `./scripts/info.sh`
 const FULL_INFO_SCRIPT = `./scripts/full_info.sh`
 
+const WINDOWS_FULL_INFO = "wmic baseboard get product ; wmic os get name ; wmic os get version"
+const WINDOWS_INFO 		= "wmic os get name ; wmic os get version"
+const WINDOWS_PREFIX	= "\033[96m \033[0m "
+
 const COMMAND_FAILED = "COMMAND_FAILED"
 const COMMAND_TIMEOUT = "COMMAND_TIMEOUT"
 const COMMAND_IN_PROGRESS = "COMMAND_IN_PROGRESS"

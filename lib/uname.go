@@ -9,6 +9,7 @@ import (
 	"os/exec"
 	"regexp"
 	"strings"
+	"runtime"
 )
 
 // If a connection has failed once we don't want to re-run it
@@ -100,18 +101,22 @@ func GetHostInfo(host string) string {
 	}
 	
 	script := ""
+	if runtime.GOOS == "windows" {
+
+	} else {
+	}
 
 	switch {
-		case *VERBOSE == 1:
-			script = INFO_SCRIPT
-		case *VERBOSE >= 2:
-			script = FULL_INFO_SCRIPT
-		default:
-			if host == LOCALHOST {
-				cmd = *exec.Command("uname", "-rms")
-			} else {
-				cmd.Args = append(cmd.Args, "uname", "-rms") 
-			}
+	case *VERBOSE == 1:
+		script = INFO_SCRIPT
+	case *VERBOSE >= 2:
+		script = FULL_INFO_SCRIPT
+	default:
+		if host == LOCALHOST {
+			cmd = *exec.Command("uname", "-rms")
+		} else {
+			cmd.Args = append(cmd.Args, "uname", "-rms") 
+		}
 	}
 
 	// In the release build the INFO_SCRIPT values will
@@ -176,21 +181,28 @@ func GetHostInfo(host string) string {
 }
 
 func GetWindowsHostInfo(host string) string {
-	cmd := *exec.Command(SSH_PATH, "-F", *CONFIG_FILE, 
-		"-o", fmt.Sprintf("ConnectTimeout=%d", *CONNECTION_TIMEOUT), 
-		host,
-	)
+	
+	cmd := exec.Cmd{}
+
+	if host != LOCALHOST {
+		cmd = *exec.Command(SSH_PATH, "-F", *CONFIG_FILE, 
+			"-o", fmt.Sprintf("ConnectTimeout=%d", *CONNECTION_TIMEOUT), 
+			host,
+		)
+	} else {
+		cmd = *exec.Command("powershell.exe", "-c")
+	}
 
 	prefix := ""
 
 	switch  {
 	case *VERBOSE >= 2:
-		prefix = "\033[96m \033[0m "
-		cmd.Stdin = strings.NewReader("wmic baseboard get product ; wmic os get name ; wmic os get version")
+		prefix = WINDOWS_PREFIX 
+		cmd.Stdin = strings.NewReader(WINDOWS_FULL_INFO)
 	case *VERBOSE >= 1:
-		cmd.Stdin = strings.NewReader("wmic baseboard get product ; wmic os get name ; wmic os get version")
+		cmd.Stdin = strings.NewReader(WINDOWS_FULL_INFO)
 	default:
-		cmd.Stdin = strings.NewReader("wmic os get name ; wmic os get version") 
+		cmd.Stdin = strings.NewReader(WINDOWS_INFO) 
 	}
 
 	var out bytes.Buffer
