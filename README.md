@@ -8,7 +8,7 @@ Clone the project
 ```bash
 git clone git@github.com:Kafva/sfetch.git
 ```
-and run `./scripts/build-release.sh` to install the binary in `$GOPATH/bin`.
+and run `./scripts/build-release.sh` to install the binary in `$GOPATH/bin`. On Windows, it is necessary to first install golang through `scoop` and then run `./scripts/build-release.sh` inside WSL.
 
 ## Notes
 * To explicitly skip a specific host in your `ssh_config`, e.g. `github.com`, an `.ignore` file can be provided via the `-i` option.
