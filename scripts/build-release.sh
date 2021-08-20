@@ -9,7 +9,6 @@ if ! $(sed --version 2>&1 | grep -q "GNU sed"); then
 fi
 
 minifyBash(){
-	# Also 
 	$sedExec -E '/^#/d; s/\[ /; \[ /g' $1 | tr '\n' ' ' | 
 		$sedExec 's/\s+/ /g;' 	| # Remove unnecessary whitespace
 		$sedExec -E 's@\\@\\\\@g;' 	| # Escape backslashes

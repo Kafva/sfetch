@@ -31,6 +31,8 @@ func GetUnameMapping(hosts_map map[string][]string) (uname_mapping map[string]st
 	
 	if !*SLOW {
 		// Once every SSH operation has started begin waiting for each one to complete
+		// Skipped hosts (applicable when [-T] is passed) are not given a chan_mapping and
+		// we therefore implicitly skip them
 		for host,ch := range chan_mapping {
 			Debug("=> (Waiting on)", host)
 			uname_mapping[host] = <- ch
@@ -41,6 +43,15 @@ func GetUnameMapping(hosts_map map[string][]string) (uname_mapping map[string]st
 }
 
 func addUnameMapping(uname_mapping map[string]string, chan_mapping map[string]chan string, host string) {
+	
+	if *TARGETS != "" {
+		// Exit early if the [-T] flag was passed and the host
+		// was not specified as a target
+		if _,found := TARGET_MAP[host]; !found {
+			Debug("=> (Skipping)", host)
+			return
+		}
+	} 
 	
 	if uname_mapping[host] == "" {
 		// Ensure that another go-routine hasn't been ran / is running for the host
@@ -157,8 +168,12 @@ func GetHostInfo(host string) string {
 			ErrMsg("[%s] Connection failed: %s\n", host, err.Error())
 			return COMMAND_TIMEOUT
 		} else {
-			// Retry using a Windows compatible command
-			return GetWindowsHostInfo(host)
+			if *SKIP_WINDOWS_CHECK {
+				return COMMAND_FAILED
+			} else {
+				// Retry using a Windows compatible command
+				return GetWindowsHostInfo(host)
+			}
 		}
 	}
 	
@@ -170,7 +185,11 @@ func GetHostInfo(host string) string {
 	if len(result) > 200 {
 		// In Release mode on Windows the captured output becomes the entire
 		// script (i.e. over 200 chars)
-		return GetWindowsHostInfo(host)
+		if *SKIP_WINDOWS_CHECK {
+			return COMMAND_FAILED
+		} else {
+			return GetWindowsHostInfo(host)
+		}
 	}
 
 	ret := strings.TrimSuffix(string(result), "\n")

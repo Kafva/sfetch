@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"strings"
 	"os/exec"
 	flag "github.com/spf13/pflag"
 	. "github.com/Kafva/sfetch/lib"
@@ -24,9 +25,12 @@ func main() {
 	SLOW 				=  flag.BoolP("slow", "s", false, "Run each SSH process sequentially (default is to use a goroutine for each)")
 	INCLUDE_HOSTNAME	=  flag.BoolP("include_hostname", "H", false, "Include hostname in output")
 	QUIET				=  flag.BoolP("quiet", "q", false, "Suppress errors")
+	SKIP_WINDOWS_CHECK	=  flag.BoolP("skip-windows", "W", false, "Skip fallback routine for remote Windows hosts")
 	
 	CONFIG_FILE = flag.StringP("ssh_config", "c", fmt.Sprintf("%s/.ssh/config", home), "Path to ssh config")
 	IGNORE_FILE = flag.StringP("ignore", "i", "", "Path to a file with hosts to ignore",)
+	
+	TARGETS 	= flag.StringP("targets", "T", "", "Only connect to specified hosts (supplied as a comma seperated string)",)
 	
 	flag.Usage = DetailUsage
 	flag.Parse()
@@ -39,6 +43,14 @@ func main() {
 	SSH_PATH, _ = exec.LookPath("ssh")
 	if SSH_PATH == "" { 
 		Die("No ssh executable found"); 
+	}
+	
+	if *TARGETS != "" {
+		targets := strings.Split(*TARGETS, ",")
+		
+		for _,target := range targets {
+			TARGET_MAP[target] = struct{}{}
+		}
 	}
 	
 	Debug("VERBOSE:", *VERBOSE)

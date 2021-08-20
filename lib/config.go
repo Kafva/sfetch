@@ -19,7 +19,9 @@ const HOSTNAME_ANSI_COLOR = "\033[97m"
 const LOCALHOST = "localhost"
 const EXIT_ERROR = 1
 
+
 // Command line options
+var SKIP_WINDOWS_CHECK *bool
 var QUIET *bool 
 var SLOW *bool 
 var CONNECTION_TIMEOUT *int
@@ -29,3 +31,6 @@ var VERBOSE *int
 var SSH_PATH = "" 
 var IGNORE_FILE *string
 var CONFIG_FILE *string
+
+var TARGETS *string
+var TARGET_MAP = make(map[string]struct{})
