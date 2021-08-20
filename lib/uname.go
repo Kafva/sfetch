@@ -190,7 +190,7 @@ func GetWindowsHostInfo(host string) string {
 			host,
 		)
 	} else {
-		cmd = *exec.Command("powershell.exe", "-c")
+		cmd = *exec.Command("powershell.exe")
 	}
 
 	prefix := ""
