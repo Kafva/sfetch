@@ -13,8 +13,9 @@ minifyBash(){
 		$sedExec 's/\s+/ /g;' 	| # Remove unnecessary whitespace
 		$sedExec -E 's@\\@\\\\@g;' 	| # Escape backslashes
 		$sedExec 's/\&/\\\&/g' 	| # `&` needs to be escaped to avoid issues in the `sed -i` statement
-		$sedExec 's/case/;case/g'	| # Hack for case...esac
-		$sedExec 's/^;case/case/'
+		$sedExec 's/case/;case/g'	| # Hacks for case...esac
+		$sedExec 's/^;case/case/' |
+		$sedExec 's/esac\s*printf/esac ; printf/' 
 
 }
 

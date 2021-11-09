@@ -6,7 +6,7 @@
 u=$(uname)
 case $u in
 	Darwin)
-		model="\033[97m \033[0m$(system_profiler SPHardwareDataType | sed -nE 's/.*Model Identifier: (.*)/\1/p')"
+		model="\033[97m\033[0m$(system_profiler SPHardwareDataType | sed -nE 's/.*Model Identifier: (.*)/ \1/p')"
 	;;
 	Linux)
 		model=$(cat /sys/devices/virtual/dmi/id/board_{name,version} 2> /dev/null | tr '\n' ' ' | sed 's/None//g')
@@ -18,8 +18,8 @@ case $u in
 			gentoo)   	  model="\033[95m \033[0m$model" ;;
 			debian)   	  model="\033[91m \033[0m$model" ;;
 			ubuntu)   	  model="\033[93m \033[0m$model" ;;
-			alpine)   	  model="\033[90m \033[0m$model" ;;
-			fedora)   	  model="\033[90m \033[0m$model" ;;
+			alpine)   	  model="\033[94m \033[0m$model" ;;
+			fedora)   	  model="\033[94m \033[0m$model" ;;
 			manjaro)  	  model="\033[92m \033[0m$model" ;;
 			raspbian) 	  model="\033[91m \033[0m$model" ;;
 			*)	  	  model="\033[97m \033[0m$model" ;;
@@ -36,6 +36,4 @@ case $u in
 	;;
 esac
 
-[ -z "$model" ] && 
-	uname -rms ||
-	printf "$model $(uname -rms)"
+printf "$model $(uname -rms)"
