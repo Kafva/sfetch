@@ -29,9 +29,9 @@ case $u in
 		model="$(doas dmidecode --type baseboard 2> /dev/null | sed -nE 's/.*Product Name: (.*)/\1/p')"
 
 		case $u in
-			FreeBSD) model="\033[91m \033[0m $model" ;;
-			OpenBSD) model="\033[93m \033[0m $model" ;;
-			NetBSD)  model="\033[93m \033[0m $model" ;;
+			FreeBSD) model="\033[91m \033[0m$model" ;;
+			OpenBSD) model="\033[93m \033[0m$model" ;;
+			NetBSD)  model="\033[93m \033[0m$model" ;;
 		esac
 	;;
 esac
