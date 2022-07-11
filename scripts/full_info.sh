@@ -15,14 +15,13 @@ case $u in
 
 		case "$(sed -nE 's/^ID=(.*)/\1/p' /etc/os-release)" in
 			arch|archarm)     model="\033[94m \033[0m$model" ;;
-			gentoo)   	  model="\033[95m \033[0m$model" ;;
+			gentoo)   	  model="\033[37m \033[0m$model" ;;
 			debian)   	  model="\033[91m \033[0m$model" ;;
 			ubuntu)   	  model="\033[93m \033[0m$model" ;;
 			alpine)   	  model="\033[94m \033[0m$model" ;;
 			fedora)   	  model="\033[94m \033[0m$model" ;;
 			manjaro)  	  model="\033[92m \033[0m$model" ;;
 			raspbian) 	  model="\033[91m \033[0m$model" ;;
-			*)	  	  model="\033[97m \033[0m$model" ;;
 		esac
 	;;
 	*BSD)
